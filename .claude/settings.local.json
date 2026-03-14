@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(mkdir -p ssl)",
+      "Bash(node -e \":*)",
+      "Bash(openssl req:*)",
+      "Bash(node generate-icons.js)"
+    ]
+  }
+}
