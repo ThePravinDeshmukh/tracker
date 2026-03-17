@@ -6,6 +6,7 @@ import HoldingRow from './components/HoldingRow';
 import AddEditModal from './components/AddEditModal';
 import { Holding, EnrichedHolding, SortKey } from './types';
 import InstallPrompt from './components/InstallPrompt';
+import AssetChart from './components/AssetChart';
 
 function fmt(n: number | undefined, decimals = 2): string {
   if (n === undefined || isNaN(n)) return '—';
@@ -34,6 +35,7 @@ export default function App() {
   const [showModal, setShowModal] = useState(false);
   const [editTarget, setEditTarget] = useState<Holding | null>(null);
   const [sortBy, setSortBy] = useState<SortKey>('value');
+  const [chartSymbol, setChartSymbol] = useState<string | null>(null);
 
   const symbols = useMemo(() => holdings.map(h => h.symbol), [holdings]);
   const { prices, prevPrices } = useCryptoPrices(symbols);
@@ -61,6 +63,14 @@ export default function App() {
   const handleClose = (): void => {
     setShowModal(false);
     setEditTarget(null);
+  };
+
+  const handleViewChart = (symbol: string): void => {
+    setChartSymbol(symbol);
+  };
+
+  const handleCloseChart = (): void => {
+    setChartSymbol(null);
   };
 
   return (
@@ -149,6 +159,7 @@ export default function App() {
                   prevPrice={prevPrices[h.symbol]}
                   onEdit={handleEdit}
                   onDelete={removeHolding}
+                  onViewChart={handleViewChart}
                 />
               ))}
             </div>
@@ -163,6 +174,14 @@ export default function App() {
           existing={editTarget}
           onSave={addOrUpdateHolding}
           onClose={handleClose}
+        />
+      )}
+
+      {chartSymbol && (
+        <AssetChart
+          symbol={chartSymbol}
+          livePrice={prices[chartSymbol]}
+          onClose={handleCloseChart}
         />
       )}
     </div>

@@ -8,6 +8,7 @@ interface Props {
   prevPrice: number | undefined;
   onEdit: (holding: Holding) => void;
   onDelete: (symbol: string) => void;
+  onViewChart: (symbol: string) => void;
 }
 
 function fmt(n: number | null | undefined, decimals = 2): string {
@@ -22,7 +23,7 @@ function fmtPrice(n: number | undefined): string {
   return fmt(n, 6);
 }
 
-export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDelete }: Props) {
+export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDelete, onViewChart }: Props) {
   const { symbol, avgPrice, qty } = holding;
   const [flash, setFlash] = useState('');
   const prevRef = useRef<number | undefined>(prevPrice);
@@ -45,7 +46,7 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
 
   return (
     <div className="holding-row fade-in">
-      <div className="coin-info">
+      <div className="coin-info" onClick={() => onViewChart(symbol)} title="View chart" style={{ cursor: 'pointer' }}>
         <div className="coin-icon" style={{ background: `${color}22`, color }}>
           {getCoinIcon(symbol)}
         </div>

@@ -6,9 +6,11 @@
     "@types/node": "^16.18.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
+    "@types/recharts": "^1.8.29",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
+    "recharts": "^3.8.0",
     "typescript": "^4.9.5",
     "workbox-core": "^6.6.0",
     "workbox-expiration": "^6.6.0",
@@ -25,7 +27,12 @@
     "serve": "serve -s build -l 50001"
   },
   "browserslist": {
-    "production": [">0.2%", "not dead"],
-    "development": ["last 1 chrome version"]
+    "production": [
+      ">0.2%",
+      "not dead"
+    ],
+    "development": [
+      "last 1 chrome version"
+    ]
   }
 }
