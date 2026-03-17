@@ -245,6 +245,103 @@
 }
 .coin-dropdown li.no-match:hover { background: none; color: var(--muted); }
 
+/* ── Asset Chart ── */
+.chart-modal {
+  max-width: 680px;
+  width: 100%;
+}
+
+.chart-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chart-title-symbol {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.chart-title-price {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.chart-timeframes {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.tf-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.04em;
+}
+
+.tf-btn:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+.tf-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.chart-area {
+  min-height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-loading,
+.chart-error {
+  color: var(--muted);
+  font-size: 14px;
+  font-family: var(--mono);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.chart-error {
+  animation: none;
+  color: var(--red);
+}
+
+.chart-tooltip {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+
+.chart-tooltip-time {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+  margin-bottom: 4px;
+}
+
+.chart-tooltip-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  font-family: var(--mono);
+}
+
 /* ── Install Banner ── */
 .install-banner {
   position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
