@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
-  ResponsiveContainer,
+  ResponsiveContainer, ReferenceLine,
 } from 'recharts';
 import type { TooltipContentProps } from 'recharts';
 import type { ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
@@ -10,6 +10,7 @@ import { getCoinIcon, COIN_COLORS } from '../hooks/useCryptoPrices';
 
 interface Props {
   symbol: string;
+  avgPrice: number;
   livePrice: number | undefined;
   onClose: () => void;
 }
@@ -38,8 +39,8 @@ function fmtAxisTime(ts: number, interval: TimeframeKey): string {
   return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
-function calcDomain(data: PricePoint[]): [number, number] {
-  const prices = data.map(d => d.price);
+function calcDomain(data: PricePoint[], avgPrice: number): [number, number] {
+  const prices = [...data.map(d => d.price), avgPrice];
   const min = Math.min(...prices);
   const max = Math.max(...prices);
   const pad = (max - min) * 0.05 || max * 0.001;
@@ -50,14 +51,14 @@ function isRising(data: PricePoint[]): boolean {
   return data.length >= 2 && data[data.length - 1].price >= data[0].price;
 }
 
-export default function AssetChart({ symbol, livePrice, onClose }: Props) {
-  const [interval, setInterval] = useState<TimeframeKey>('1h');
+export default function AssetChart({ symbol, avgPrice, livePrice, onClose }: Props) {
+  const [interval, setInterval] = useState<TimeframeKey>('1m');
   const { data, loading, error } = useAssetHistory(symbol, interval);
 
   const color = COIN_COLORS[symbol] ?? '#7c6dfa';
   const icon = getCoinIcon(symbol);
   const lineColor = data.length > 0 ? (isRising(data) ? '#34d48a' : '#fa5252') : '#7c6dfa';
-  const domain = data.length > 0 ? calcDomain(data) : undefined;
+  const domain = data.length > 0 ? calcDomain(data, avgPrice) : undefined;
 
   const renderTooltip = ({ active, payload }: TooltipContentProps<ValueType, NameType>) => {
     if (!active || !payload?.length) return null;
@@ -127,6 +128,13 @@ export default function AssetChart({ symbol, livePrice, onClose }: Props) {
                   width={80}
                 />
                 <Tooltip content={renderTooltip} />
+                <ReferenceLine
+                  y={avgPrice}
+                  stroke="var(--accent)"
+                  strokeDasharray="4 3"
+                  strokeWidth={1}
+                  label={{ value: `Avg $${fmtPrice(avgPrice)}`, position: 'insideTopRight', fontSize: 10, fill: 'var(--accent)', fontFamily: 'var(--mono)' }}
+                />
                 <Line
                   type="monotone"
                   dataKey="price"
