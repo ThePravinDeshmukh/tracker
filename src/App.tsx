@@ -180,6 +180,7 @@ export default function App() {
       {chartSymbol && (
         <AssetChart
           symbol={chartSymbol}
+          avgPrice={holdings.find(h => h.symbol === chartSymbol)?.avgPrice ?? 0}
           livePrice={prices[chartSymbol]}
           onClose={handleCloseChart}
         />
