@@ -41,12 +41,13 @@ export function useRecommendations(symbols: string[]): Record<string, Recommenda
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (symbols.length === 0) return;
+    const currentSymbols = symbolsKey.split(',').filter(Boolean);
+    if (currentSymbols.length === 0) return;
     let cancelled = false;
 
     async function fetchAll(): Promise<void> {
       const results = await Promise.allSettled(
-        symbols.map(async symbol => {
+        currentSymbols.map(async symbol => {
           const rec = await fetchRecommendation(symbol);
           return { symbol, rec };
         })
@@ -68,7 +69,6 @@ export function useRecommendations(symbols: string[]): Record<string, Recommenda
       cancelled = true;
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [symbolsKey]);
 
   return recommendations;
