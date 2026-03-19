@@ -15,3 +15,5 @@ export interface EnrichedHolding extends Holding {
 export type PriceMap = Record<string, number>;
 
 export type SortKey = 'value' | 'pnl' | 'pnlpct' | 'name';
+
+export type Recommendation = 'BUY' | 'SELL' | 'HOLD';

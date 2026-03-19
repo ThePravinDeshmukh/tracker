@@ -7,6 +7,7 @@ import AddEditModal from './components/AddEditModal';
 import { Holding, EnrichedHolding, SortKey } from './types';
 import InstallPrompt from './components/InstallPrompt';
 import AssetChart from './components/AssetChart';
+import { useRecommendations } from './hooks/useRecommendations';
 
 function fmt(n: number | undefined, decimals = 2): string {
   if (n === undefined || isNaN(n)) return '—';
@@ -39,6 +40,7 @@ export default function App() {
 
   const symbols = useMemo(() => holdings.map(h => h.symbol), [holdings]);
   const { prices, prevPrices } = useCryptoPrices(symbols);
+  const recommendations = useRecommendations(symbols);
 
   const enriched = useMemo(
     () => holdings.map(h => enrichHolding(h, prices[h.symbol])),
@@ -149,6 +151,7 @@ export default function App() {
                 <span>Live Price</span>
                 <span>Value</span>
                 <span>P&L</span>
+                <span>Signal</span>
                 <span></span>
               </div>
               {sorted.map(h => (
@@ -157,6 +160,7 @@ export default function App() {
                   holding={h}
                   livePrice={h.livePrice}
                   prevPrice={prevPrices[h.symbol]}
+                  recommendation={recommendations[h.symbol]}
                   onEdit={handleEdit}
                   onDelete={removeHolding}
                   onViewChart={handleViewChart}
