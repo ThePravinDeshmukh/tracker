@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { getCoinIcon, COIN_COLORS } from '../hooks/useCryptoPrices';
-import { Holding } from '../types';
+import { Holding, Recommendation } from '../types';
 
 interface Props {
   holding: Holding;
   livePrice: number | undefined;
   prevPrice: number | undefined;
+  recommendation: Recommendation | undefined;
   onEdit: (holding: Holding) => void;
   onDelete: (symbol: string) => void;
   onViewChart: (symbol: string) => void;
@@ -23,7 +24,7 @@ function fmtPrice(n: number | undefined): string {
   return fmt(n, 6);
 }
 
-export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDelete, onViewChart }: Props) {
+export default function HoldingRow({ holding, livePrice, prevPrice, recommendation, onEdit, onDelete, onViewChart }: Props) {
   const { symbol, avgPrice, qty } = holding;
   const [flash, setFlash] = useState('');
   const prevRef = useRef<number | undefined>(prevPrice);
@@ -83,6 +84,15 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
             </>
           ) : '—'}
         </div>
+      </div>
+
+      <div className="col">
+        <div className="label">Signal</div>
+        {recommendation ? (
+          <span className={`rec-badge rec-${recommendation.toLowerCase()}`}>{recommendation}</span>
+        ) : (
+          <span className="loading-dot">•••</span>
+        )}
       </div>
 
       <div className="row-actions">
