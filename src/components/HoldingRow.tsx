@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { getCoinIcon, COIN_COLORS } from '../hooks/useCryptoPrices';
+import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
 import { Holding, Recommendation } from '../types';
 
 interface Props {
@@ -43,7 +43,7 @@ export default function HoldingRow({ holding, livePrice, prevPrice, recommendati
   const currentValue = livePrice ? livePrice * qty : null;
   const pnl = currentValue !== null ? currentValue - invested : null;
   const pnlPct = pnl !== null && invested > 0 ? (pnl / invested) * 100 : null;
-  const color = COIN_COLORS[symbol] ?? '#7c6dfa';
+  const color = getCoinColor(symbol);
 
   return (
     <div className="holding-row fade-in">

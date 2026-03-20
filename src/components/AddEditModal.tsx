@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SUPPORTED_COINS } from '../hooks/useCryptoPrices';
+import { useAvailablePairs } from '../hooks/useAvailablePairs';
 import { Holding } from '../types';
 
 interface Props {
@@ -17,6 +17,8 @@ export default function AddEditModal({ existing, onSave, onClose }: Props) {
   const [error, setError] = useState('');
   const wrapperRef = useRef<HTMLDivElement>(null);
 
+  const { allSymbols, loading: loadingCoins } = useAvailablePairs();
+
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handleKey);
@@ -33,7 +35,7 @@ export default function AddEditModal({ existing, onSave, onClose }: Props) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filteredCoins = SUPPORTED_COINS.filter(c =>
+  const filteredCoins = allSymbols.filter(c =>
     c.toLowerCase().includes(coinSearch.toLowerCase())
   );
 
@@ -50,7 +52,7 @@ export default function AddEditModal({ existing, onSave, onClose }: Props) {
     setSymbol('');
     setShowDropdown(true);
     setError('');
-    if (SUPPORTED_COINS.includes(val)) {
+    if (allSymbols.includes(val)) {
       setSymbol(val);
     }
   };
@@ -88,7 +90,12 @@ export default function AddEditModal({ existing, onSave, onClose }: Props) {
                   autoComplete="off"
                   autoFocus
                 />
-                {showDropdown && filteredCoins.length > 0 && (
+                {showDropdown && loadingCoins && (
+                  <ul className="coin-dropdown">
+                    <li className="no-match">Loading coins…</li>
+                  </ul>
+                )}
+                {showDropdown && !loadingCoins && filteredCoins.length > 0 && (
                   <ul className="coin-dropdown">
                     {filteredCoins.map(c => (
                       <li
@@ -101,7 +108,7 @@ export default function AddEditModal({ existing, onSave, onClose }: Props) {
                     ))}
                   </ul>
                 )}
-                {showDropdown && coinSearch.length > 0 && filteredCoins.length === 0 && (
+                {showDropdown && !loadingCoins && coinSearch.length > 0 && filteredCoins.length === 0 && (
                   <ul className="coin-dropdown">
                     <li className="no-match">No coins found</li>
                   </ul>
