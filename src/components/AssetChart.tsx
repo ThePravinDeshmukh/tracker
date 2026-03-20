@@ -6,7 +6,7 @@ import {
 import type { TooltipContentProps } from 'recharts';
 import type { ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
 import { useAssetHistory, TimeframeKey, PricePoint } from '../hooks/useAssetHistory';
-import { getCoinIcon, COIN_COLORS } from '../hooks/useCryptoPrices';
+import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
 
 interface Props {
   symbol: string;
@@ -55,7 +55,7 @@ export default function AssetChart({ symbol, avgPrice, livePrice, onClose }: Pro
   const [interval, setInterval] = useState<TimeframeKey>('1m');
   const { data, loading, error } = useAssetHistory(symbol, interval);
 
-  const color = COIN_COLORS[symbol] ?? '#7c6dfa';
+  const color = getCoinColor(symbol);
   const icon = getCoinIcon(symbol);
   const lineColor = data.length > 0 ? (isRising(data) ? '#34d48a' : '#fa5252') : '#7c6dfa';
   const domain = data.length > 0 ? calcDomain(data, avgPrice) : undefined;

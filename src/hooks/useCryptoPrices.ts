@@ -1,87 +1,85 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { PriceMap } from '../types';
+import { useAvailablePairs } from './useAvailablePairs';
 
-// Spot market coins (stream.binance.com)
-const SPOT_COIN_IDS: Record<string, string> = {
-  BTC: 'BTCUSDT',
-  ETH: 'ETHUSDT',
-  SOL: 'SOLUSDT',
-  BNB: 'BNBUSDT',
-  XRP: 'XRPUSDT',
-  ADA: 'ADAUSDT',
-  AVAX: 'AVAXUSDT',
-  DOT: 'DOTUSDT',
-  MATIC: 'MATICUSDT',
-  LINK: 'LINKUSDT',
-  LTC: 'LTCUSDT',
-  UNI: 'UNIUSDT',
-  ATOM: 'ATOMUSDT',
-  DOGE: 'DOGEUSDT',
-  SUI: 'SUIUSDT',
-  APT: 'APTUSDT',
-  OP: 'OPUSDT',
-  ARB: 'ARBUSDT',
-  NEAR: 'NEARUSDT',
-  ICP: 'ICPUSDT',
-  SHIB: 'SHIBUSDT',
-  TRX: 'TRXUSDT',
-  TON: 'TONUSDT',
-  HBAR: 'HBARUSDT',
-  VET: 'VETUSDT',
-  ALGO: 'ALGOUSDT',
-  AAVE: 'AAVEUSDT',
-  FIL: 'FILUSDT',
-  THETA: 'THETAUSDT',
-  XLM: 'XLMUSDT',
-  EOS: 'EOSUSDT',
-  MKR: 'MKRUSDT',
-  GRT: 'GRTUSDT',
-  PEPE: 'PEPEUSDT',
-  JUP: 'JUPUSDT',
-  SEI: 'SEIUSDT',
-  TIA: 'TIAUSDT',
-  WIF: 'WIFUSDT',
-  FET: 'FETUSDT',
-  RENDER: 'RENDERUSDT',
-};
+// Fallback set used before dynamic pair data has loaded
+const FALLBACK_FUTURES_ONLY = new Set<string>(['DUSK', 'HANA']);
 
-// Futures-only coins (fstream.binance.com) — not listed on Binance spot
-const FUTURES_COIN_IDS: Record<string, string> = {
-  DUSK: 'DUSKUSDT',
-  HANA: 'HANAUSDT',
-};
+const SPOT_WS_URL = 'wss://stream.binance.com:9443/stream';
+const FUTURES_WS_URL = 'wss://fstream.binance.com/stream';
+const SPOT_REST_URL = 'https://api.binance.com/api/v3/ticker/price';
+const FUTURES_REST_URL = 'https://fapi.binance.com/fapi/v1/ticker/price';
 
-const ALL_COIN_IDS: Record<string, string> = { ...SPOT_COIN_IDS, ...FUTURES_COIN_IDS };
+function toUsdtPair(symbol: string): string {
+  return `${symbol.toUpperCase()}USDT`;
+}
+
+function buildStreamUrl(baseWsUrl: string, pairs: string[]): string {
+  const streams = pairs.map(p => `${p.toLowerCase()}@ticker`).join('/');
+  return `${baseWsUrl}?streams=${streams}`;
+}
 
 interface UseCryptoPricesResult {
   prices: PriceMap;
   prevPrices: PriceMap;
 }
 
-function openStream(
+function openTickerStream(
   url: string,
-  coinIds: Record<string, string>,
   onPrice: (symbol: string, price: number) => void,
   onError: () => void
 ): WebSocket {
   const ws = new WebSocket(url);
-
   ws.onmessage = (event: MessageEvent) => {
     try {
       const { data } = JSON.parse(event.data as string);
-      if (!data) return;
-      const symbol = Object.keys(coinIds).find(k => coinIds[k] === data.s);
-      if (symbol) onPrice(symbol, parseFloat(data.c));
-    } catch (e) {}
+      if (!data?.s || !data?.c) return;
+      const symbol = (data.s as string).replace(/USDT$/, '');
+      onPrice(symbol, parseFloat(data.c as string));
+    } catch {}
   };
-
   ws.onerror = onError;
   return ws;
+}
+
+async function fetchPricesFallback(
+  symbols: string[],
+  baseUrl: string,
+  setPrices: React.Dispatch<React.SetStateAction<PriceMap>>
+): Promise<void> {
+  try {
+    const results = await Promise.all(
+      symbols.map(async symbol => {
+        const res = await fetch(`${baseUrl}?symbol=${toUsdtPair(symbol)}`);
+        const data = await res.json() as { price: string };
+        return { symbol, price: parseFloat(data.price) };
+      })
+    );
+    const priceMap: PriceMap = {};
+    results.forEach(r => { priceMap[r.symbol] = r.price; });
+    setPrices(prev => ({ ...prev, ...priceMap }));
+  } catch {}
 }
 
 export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
   const [prices, setPrices] = useState<PriceMap>({});
   const [prevPrices, setPrevPrices] = useState<PriceMap>({});
+  const { spotSymbols: availableSpot, futuresSymbols: availableFutures } = useAvailablePairs();
+
+  // Determine which portfolio symbols are futures-only.
+  // Before dynamic data arrives, fall back to a small hardcoded set.
+  const futuresOnlySet = useMemo(() => {
+    if (availableSpot.length === 0 && availableFutures.length === 0) {
+      return FALLBACK_FUTURES_ONLY;
+    }
+    const spotSet = new Set(availableSpot);
+    return new Set(availableFutures.filter(s => !spotSet.has(s)));
+  }, [availableSpot, availableFutures]);
+
+  const futuresKey = useMemo(
+    () => Array.from(futuresOnlySet).sort().join(','),
+    [futuresOnlySet]
+  );
 
   const applyPrice = (symbol: string, price: number): void => {
     setPrices(prev => {
@@ -94,60 +92,36 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
     if (!symbols || symbols.length === 0) return;
 
     const upper = symbols.map(s => s.toUpperCase());
-    const spotSymbols = upper.filter(s => SPOT_COIN_IDS[s]);
-    const futuresSymbols = upper.filter(s => FUTURES_COIN_IDS[s]);
+    const spotSymbols = upper.filter(s => !futuresOnlySet.has(s));
+    const futuresSymbols = upper.filter(s => futuresOnlySet.has(s));
 
     const connections: WebSocket[] = [];
 
     if (spotSymbols.length > 0) {
-      const streams = spotSymbols.map(s => `${SPOT_COIN_IDS[s].toLowerCase()}@ticker`).join('/');
-      const ws = openStream(
-        `wss://stream.binance.com:9443/stream?streams=${streams}`,
-        SPOT_COIN_IDS,
+      const spotPairs = spotSymbols.map(toUsdtPair);
+      const ws = openTickerStream(
+        buildStreamUrl(SPOT_WS_URL, spotPairs),
         applyPrice,
-        () => fetchFallback(spotSymbols, SPOT_COIN_IDS, 'https://api.binance.com/api/v3/ticker/price', setPrices)
+        () => fetchPricesFallback(spotSymbols, SPOT_REST_URL, setPrices)
       );
       connections.push(ws);
     }
 
     if (futuresSymbols.length > 0) {
-      const streams = futuresSymbols.map(s => `${FUTURES_COIN_IDS[s].toLowerCase()}@ticker`).join('/');
-      const ws = openStream(
-        `wss://fstream.binance.com/stream?streams=${streams}`,
-        FUTURES_COIN_IDS,
+      const futuresPairs = futuresSymbols.map(toUsdtPair);
+      const ws = openTickerStream(
+        buildStreamUrl(FUTURES_WS_URL, futuresPairs),
         applyPrice,
-        () => fetchFallback(futuresSymbols, FUTURES_COIN_IDS, 'https://fapi.binance.com/fapi/v1/ticker/price', setPrices)
+        () => fetchPricesFallback(futuresSymbols, FUTURES_REST_URL, setPrices)
       );
       connections.push(ws);
     }
 
     return () => connections.forEach(ws => ws.close());
-  }, [symbols.join(',')]);
+  }, [symbols.join(','), futuresKey]); // eslint-disable-line
 
   return { prices, prevPrices };
 }
-
-async function fetchFallback(
-  symbols: string[],
-  coinIds: Record<string, string>,
-  baseUrl: string,
-  setPrices: React.Dispatch<React.SetStateAction<PriceMap>>
-): Promise<void> {
-  try {
-    const results = await Promise.all(
-      symbols.map(async s => {
-        const res = await fetch(`${baseUrl}?symbol=${coinIds[s]}`);
-        const data = await res.json() as { price: string };
-        return { symbol: s, price: parseFloat(data.price) };
-      })
-    );
-    const priceMap: PriceMap = {};
-    results.forEach(r => { priceMap[r.symbol] = r.price; });
-    setPrices(prev => ({ ...prev, ...priceMap }));
-  } catch (e) {}
-}
-
-export const SUPPORTED_COINS: string[] = Object.keys(ALL_COIN_IDS);
 
 export function getCoinIcon(symbol: string): string {
   const map: Record<string, string> = {
@@ -162,7 +136,7 @@ export function getCoinIcon(symbol: string): string {
   return map[symbol] ?? symbol[0];
 }
 
-export const COIN_COLORS: Record<string, string> = {
+const KNOWN_COIN_COLORS: Record<string, string> = {
   BTC: '#f7931a', ETH: '#627eea', SOL: '#9945ff', BNB: '#f3ba2f',
   XRP: '#346aa9', ADA: '#0033ad', AVAX: '#e84142', DOT: '#e6007a',
   MATIC: '#8247e5', LINK: '#375bd2', LTC: '#bfbbbb', UNI: '#ff007a',
@@ -175,3 +149,19 @@ export const COIN_COLORS: Record<string, string> = {
   TIA: '#7b2d8b', WIF: '#c4a35a', FET: '#1a1a2e', RENDER: '#ff5733',
   DUSK: '#372d5e', HANA: '#ff6b9d',
 };
+
+function generateCoinColor(symbol: string): string {
+  let hash = 0;
+  for (const ch of symbol) {
+    hash = (hash * 31 + ch.charCodeAt(0)) & 0xffffff;
+  }
+  const hue = hash % 360;
+  return `hsl(${hue}, 65%, 55%)`;
+}
+
+export function getCoinColor(symbol: string): string {
+  return KNOWN_COIN_COLORS[symbol] ?? generateCoinColor(symbol);
+}
+
+// Keep COIN_COLORS export for any direct usages not yet migrated
+export const COIN_COLORS: Record<string, string> = KNOWN_COIN_COLORS;
