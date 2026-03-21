@@ -10,6 +10,7 @@ interface Props {
   onEdit: (holding: Holding) => void;
   onDelete: (symbol: string) => void;
   onViewChart: (symbol: string) => void;
+  onCloseTrade: (holding: Holding) => void;
 }
 
 function fmt(n: number | null | undefined, decimals = 2): string {
@@ -24,7 +25,7 @@ function fmtPrice(n: number | undefined): string {
   return fmt(n, 6);
 }
 
-export default function HoldingRow({ holding, livePrice, prevPrice, recommendation, onEdit, onDelete, onViewChart }: Props) {
+export default function HoldingRow({ holding, livePrice, prevPrice, recommendation, onEdit, onDelete, onViewChart, onCloseTrade }: Props) {
   const { symbol, avgPrice, qty } = holding;
   const [flash, setFlash] = useState('');
   const prevRef = useRef<number | undefined>(prevPrice);
@@ -97,6 +98,7 @@ export default function HoldingRow({ holding, livePrice, prevPrice, recommendati
 
       <div className="row-actions">
         <button className="btn-icon edit" onClick={() => onEdit(holding)} title="Edit">✎</button>
+        <button className="btn-icon close-trade" onClick={() => onCloseTrade(holding)} title="Close trade">⊗</button>
         <button className="btn-icon del" onClick={() => onDelete(symbol)} title="Remove">✕</button>
       </div>
     </div>
