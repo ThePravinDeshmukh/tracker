@@ -389,6 +389,61 @@
 .install-actions { display: flex; gap: 8px; flex-shrink: 0; }
 .btn.small { padding: 6px 12px; font-size: 12px; }
 
+/* ── Signal Tooltip ── */
+.rec-badge-clickable {
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.rec-badge-clickable:hover { opacity: 0.8; transform: scale(1.05); }
+
+.signal-tooltip {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+}
+
+.signal-tooltip-header {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.signal-tooltip-row {
+  margin-bottom: 10px;
+}
+.signal-tooltip-row:last-of-type { margin-bottom: 0; }
+
+.signal-tooltip-indicator {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 3px;
+}
+
+.signal-tooltip-name {
+  font-size: 12px; font-weight: 600; color: var(--text);
+  font-family: var(--mono);
+}
+
+.signal-tooltip-badge {
+  font-size: 10px !important;
+  padding: 2px 7px !important;
+  letter-spacing: 0.06em;
+}
+
+.signal-tooltip-reason {
+  font-size: 12px; color: var(--muted);
+  line-height: 1.45;
+}
+
+.signal-tooltip-footer {
+  font-size: 10px; color: var(--muted); opacity: 0.55;
+  border-top: 1px solid var(--border);
+  padding-top: 8px; margin-top: 10px;
+  line-height: 1.4;
+}
+
 /* ── Close Trade Modal ── */
 .close-trade-title {
   display: flex; align-items: center; gap: 12px;

@@ -17,3 +17,14 @@ export type PriceMap = Record<string, number>;
 export type SortKey = 'value' | 'pnl' | 'pnlpct' | 'name';
 
 export type Recommendation = 'BUY' | 'SELL' | 'HOLD';
+
+export interface SignalDetail {
+  indicator: string;
+  signal: Recommendation;
+  reason: string;
+}
+
+export interface RecommendationDetail {
+  signal: Recommendation;
+  details: SignalDetail[];
+}

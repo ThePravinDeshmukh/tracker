@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Recommendation } from '../types';
+import { RecommendationDetail } from '../types';
 import { getRecommendation, OHLCVPoint } from '../utils/indicators';
 
 const FUTURES_SYMBOLS = new Set(['DUSK', 'HANA']);
@@ -28,15 +28,15 @@ function parseOHLCV(raw: RawKline[]): OHLCVPoint[] {
   }));
 }
 
-async function fetchRecommendation(symbol: string): Promise<Recommendation> {
+async function fetchRecommendation(symbol: string): Promise<RecommendationDetail> {
   const res = await fetch(getKlineUrl(symbol));
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const raw = (await res.json()) as RawKline[];
   return getRecommendation(parseOHLCV(raw));
 }
 
-export function useRecommendations(symbols: string[]): Record<string, Recommendation> {
-  const [recommendations, setRecommendations] = useState<Record<string, Recommendation>>({});
+export function useRecommendations(symbols: string[]): Record<string, RecommendationDetail> {
+  const [recommendations, setRecommendations] = useState<Record<string, RecommendationDetail>>({});
   const symbolsKey = symbols.join(',');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -53,7 +53,7 @@ export function useRecommendations(symbols: string[]): Record<string, Recommenda
         })
       );
       if (cancelled) return;
-      const next: Record<string, Recommendation> = {};
+      const next: Record<string, RecommendationDetail> = {};
       for (const result of results) {
         if (result.status === 'fulfilled') {
           next[result.value.symbol] = result.value.rec;
