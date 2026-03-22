@@ -8,6 +8,7 @@ import { Holding, EnrichedHolding, SortKey } from './types';
 import InstallPrompt from './components/InstallPrompt';
 import AssetChart from './components/AssetChart';
 import CloseTradeModal from './components/CloseTradeModal';
+import VolumeChart from './components/VolumeChart';
 import { useRecommendations } from './hooks/useRecommendations';
 
 function fmt(n: number | undefined, decimals = 2): string {
@@ -39,9 +40,10 @@ export default function App() {
   const [sortBy, setSortBy] = useState<SortKey>('value');
   const [chartSymbol, setChartSymbol] = useState<string | null>(null);
   const [closeTradeTarget, setCloseTradeTarget] = useState<Holding | null>(null);
+  const [volumeChartSymbol, setVolumeChartSymbol] = useState<string | null>(null);
 
   const symbols = useMemo(() => holdings.map(h => h.symbol), [holdings]);
-  const { prices, prevPrices } = useCryptoPrices(symbols);
+  const { prices, prevPrices, volumes } = useCryptoPrices(symbols);
   const recommendations = useRecommendations(symbols);
 
   const enriched = useMemo(
@@ -160,7 +162,8 @@ export default function App() {
                 <span>Avg Price</span>
                 <span>Live Price</span>
                 <span>Value</span>
-                <span>P&L</span>
+                <span>P&amp;L</span>
+                <span>24h Vol</span>
                 <span>Signal</span>
                 <span></span>
               </div>
@@ -170,10 +173,12 @@ export default function App() {
                   holding={h}
                   livePrice={h.livePrice}
                   prevPrice={prevPrices[h.symbol]}
+                  volume={volumes[h.symbol]}
                   recommendation={recommendations[h.symbol]}
                   onEdit={handleEdit}
                   onDelete={removeHolding}
                   onViewChart={handleViewChart}
+                  onVolumeClick={setVolumeChartSymbol}
                   onCloseTrade={handleOpenCloseTrade}
                 />
               ))}
@@ -198,6 +203,14 @@ export default function App() {
           livePrice={prices[closeTradeTarget.symbol]}
           onConfirm={removeHolding}
           onClose={handleCloseTradeModal}
+        />
+      )}
+
+      {volumeChartSymbol && (
+        <VolumeChart
+          symbol={volumeChartSymbol}
+          liveVolume={volumes[volumeChartSymbol]}
+          onClose={() => setVolumeChartSymbol(null)}
         />
       )}
 

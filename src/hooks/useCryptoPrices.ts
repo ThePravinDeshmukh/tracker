@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { PriceMap } from '../types';
+import { PriceMap, VolumeMap } from '../types';
 import { useAvailablePairs } from './useAvailablePairs';
 
 // Fallback set used before dynamic pair data has loaded
@@ -22,11 +22,14 @@ function buildStreamUrl(baseWsUrl: string, pairs: string[]): string {
 interface UseCryptoPricesResult {
   prices: PriceMap;
   prevPrices: PriceMap;
+  volumes: VolumeMap;
 }
+
+type OnTick = (symbol: string, price: number, volume: number) => void;
 
 function openTickerStream(
   url: string,
-  onPrice: (symbol: string, price: number) => void,
+  onTick: OnTick,
   onError: () => void
 ): WebSocket {
   const ws = new WebSocket(url);
@@ -35,7 +38,9 @@ function openTickerStream(
       const { data } = JSON.parse(event.data as string);
       if (!data?.s || !data?.c) return;
       const symbol = (data.s as string).replace(/USDT$/, '');
-      onPrice(symbol, parseFloat(data.c as string));
+      const price = parseFloat(data.c as string);
+      const volume = parseFloat(data.q as string); // 24h quote asset volume in USDT
+      onTick(symbol, price, volume);
     } catch {}
   };
   ws.onerror = onError;
@@ -64,6 +69,7 @@ async function fetchPricesFallback(
 export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
   const [prices, setPrices] = useState<PriceMap>({});
   const [prevPrices, setPrevPrices] = useState<PriceMap>({});
+  const [volumes, setVolumes] = useState<VolumeMap>({});
   const { spotSymbols: availableSpot, futuresSymbols: availableFutures } = useAvailablePairs();
 
   // Determine which portfolio symbols are futures-only.
@@ -81,11 +87,12 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
     [futuresOnlySet]
   );
 
-  const applyPrice = (symbol: string, price: number): void => {
+  const applyTick = (symbol: string, price: number, volume: number): void => {
     setPrices(prev => {
       setPrevPrices(pp => ({ ...pp, [symbol]: prev[symbol] }));
       return { ...prev, [symbol]: price };
     });
+    if (!isNaN(volume)) setVolumes(prev => ({ ...prev, [symbol]: volume }));
   };
 
   useEffect(() => {
@@ -101,7 +108,7 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
       const spotPairs = spotSymbols.map(toUsdtPair);
       const ws = openTickerStream(
         buildStreamUrl(SPOT_WS_URL, spotPairs),
-        applyPrice,
+        applyTick,
         () => fetchPricesFallback(spotSymbols, SPOT_REST_URL, setPrices)
       );
       connections.push(ws);
@@ -111,7 +118,7 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
       const futuresPairs = futuresSymbols.map(toUsdtPair);
       const ws = openTickerStream(
         buildStreamUrl(FUTURES_WS_URL, futuresPairs),
-        applyPrice,
+        applyTick,
         () => fetchPricesFallback(futuresSymbols, FUTURES_REST_URL, setPrices)
       );
       connections.push(ws);
@@ -120,7 +127,7 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
     return () => connections.forEach(ws => ws.close());
   }, [symbols.join(','), futuresKey]); // eslint-disable-line
 
-  return { prices, prevPrices };
+  return { prices, prevPrices, volumes };
 }
 
 export function getCoinIcon(symbol: string): string {
