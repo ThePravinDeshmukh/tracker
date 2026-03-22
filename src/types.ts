@@ -13,6 +13,13 @@ export interface EnrichedHolding extends Holding {
 }
 
 export type PriceMap = Record<string, number>;
+export type VolumeMap = Record<string, number>;
+
+export interface VolumePoint {
+  time: number;
+  volume: number; // quote asset volume in USDT
+  isUp: boolean;  // close >= open
+}
 
 export type SortKey = 'value' | 'pnl' | 'pnlpct' | 'name';
 
