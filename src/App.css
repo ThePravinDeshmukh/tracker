@@ -329,7 +329,7 @@
 }
 
 .chart-area {
-  min-height: 260px;
+  min-height: 300px;
   display: flex;
   align-items: center;
   justify-content: center;
