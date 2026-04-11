@@ -50,9 +50,13 @@ export default function App() {
     pastSignals,
     prices: watcherPrices,
     activeToast,
+    isChecking,
+    lastChecked,
+    refreshResult,
     addToWatchlist,
     removeFromWatchlist,
     dismissToast,
+    refresh,
   } = useWatcher();
 
   const symbols = useMemo(() => holdings.map(h => h.symbol), [holdings]);
@@ -223,8 +227,12 @@ export default function App() {
         currentSignals={currentSignals}
         pastSignals={pastSignals}
         prices={watcherPrices}
+        isChecking={isChecking}
+        lastChecked={lastChecked}
+        refreshResult={refreshResult}
         onAdd={addToWatchlist}
         onRemove={removeFromWatchlist}
+        onRefresh={refresh}
       />
 
       {/* Watcher Toast */}
