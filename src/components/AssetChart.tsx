@@ -151,7 +151,7 @@ export default function AssetChart({ symbol, avgPrice, livePrice, liveVolume, on
                   <XAxis dataKey="time" hide />
                   <YAxis
                     domain={domain}
-                    tickFormatter={v => fmtPrice(v as number)}
+                    tickFormatter={(v: number) => fmtPrice(v)}
                     tick={{ fontSize: 10, fill: 'var(--muted)', fontFamily: 'var(--mono)' }}
                     axisLine={false}
                     tickLine={false}
@@ -180,7 +180,7 @@ export default function AssetChart({ symbol, avgPrice, livePrice, liveVolume, on
                 <BarChart data={volumeHistory} syncId={syncId} margin={{ top: 4, right: 8, bottom: 0, left: 0 }} barCategoryGap="15%">
                   <XAxis
                     dataKey="time"
-                    tickFormatter={ts => fmtAxisTime(ts as number, interval)}
+                    tickFormatter={(ts: number) => fmtAxisTime(ts, interval)}
                     tick={{ fontSize: 10, fill: 'var(--muted)', fontFamily: 'var(--mono)' }}
                     axisLine={false}
                     tickLine={false}
@@ -188,7 +188,7 @@ export default function AssetChart({ symbol, avgPrice, livePrice, liveVolume, on
                   />
                   <YAxis
                     domain={[0, maxVol ? maxVol * 1.1 : 'auto']}
-                    tickFormatter={v => fmtVolume(v as number)}
+                    tickFormatter={(v: number) => fmtVolume(v)}
                     tick={{ fontSize: 10, fill: 'var(--muted)', fontFamily: 'var(--mono)' }}
                     axisLine={false}
                     tickLine={false}

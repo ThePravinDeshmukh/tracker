@@ -6,20 +6,11 @@ interface Props {
   holding: Holding;
   livePrice: number | undefined;
   prevPrice: number | undefined;
-  volume: number | undefined;
   onEdit: (holding: Holding) => void;
   onDelete: (symbol: string) => void;
   onViewChart: (symbol: string) => void;
-  onVolumeClick: (symbol: string) => void;
   onCloseTrade: (holding: Holding) => void;
   onAddTo: (holding: Holding) => void;
-}
-
-function fmtVolume(n: number): string {
-  if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
-  if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `$${(n / 1e3).toFixed(1)}K`;
-  return `$${n.toFixed(0)}`;
 }
 
 function fmt(n: number | null | undefined, decimals = 2): string {
@@ -34,7 +25,7 @@ function fmtPrice(n: number | undefined): string {
   return fmt(n, 6);
 }
 
-export default function HoldingRow({ holding, livePrice, prevPrice, volume, onEdit, onDelete, onViewChart, onVolumeClick, onCloseTrade, onAddTo }: Props) {
+export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDelete, onViewChart, onCloseTrade, onAddTo }: Props) {
   const { symbol, avgPrice, qty } = holding;
   const [flash, setFlash] = useState('');
   const prevRef = useRef<number | undefined>(prevPrice);
@@ -93,17 +84,6 @@ export default function HoldingRow({ holding, livePrice, prevPrice, volume, onEd
               <span className="pct"> ({(pnlPct ?? 0) >= 0 ? '+' : ''}{fmt(pnlPct)}%)</span>
             </>
           ) : '—'}
-        </div>
-      </div>
-
-      <div className="col">
-        <div className="label">24h Volume</div>
-        <div
-          className="value mono vol-value"
-          onClick={() => onVolumeClick(symbol)}
-          title="View volume chart"
-        >
-          {volume !== undefined ? fmtVolume(volume) : <span className="loading-dot">•••</span>}
         </div>
       </div>
 
