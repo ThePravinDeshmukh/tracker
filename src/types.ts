@@ -22,3 +22,16 @@ export interface VolumePoint {
 }
 
 export type SortKey = 'value' | 'pnl' | 'pnlpct' | 'name';
+
+export interface WatcherSignal {
+  symbol: string;
+  price: number;
+  priceChangePct: number;  // e.g. 2.4 means +2.4%
+  volumeRatio: number;     // e.g. 1.8 means 1.8× rolling average
+  enteredAt: number;       // unix ms — when coin entered current signals
+  exitedAt?: number;       // unix ms — set when coin moves to past signals
+}
+
+export interface WatchedCoin {
+  symbol: string;
+}
