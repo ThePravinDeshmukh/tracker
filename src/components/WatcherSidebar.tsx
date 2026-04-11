@@ -77,7 +77,7 @@ export default function WatcherSidebar({
     setShowNotification(true);
     const timer = setTimeout(() => setShowNotification(false), 4000);
     return () => clearTimeout(timer);
-  }, [refreshResult?.checkedAt]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [refreshResult]); // new object reference on each check is sufficient
 
   const filteredCoins = allSymbols
     .filter(c => !watchlist.includes(c))
