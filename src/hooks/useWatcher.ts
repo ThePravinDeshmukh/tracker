@@ -155,11 +155,10 @@ export function useWatcher(): UseWatcherResult {
     }
   }, []);
 
-  // Single check on page load
+  // Single check on page load — intentional empty deps, runs once on mount
   useEffect(() => {
     checkSignals(watchlistRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // eslint-disable-line
 
   const refresh = useCallback(() => {
     checkSignals(watchlistRef.current);
