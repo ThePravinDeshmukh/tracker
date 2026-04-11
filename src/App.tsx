@@ -9,6 +9,9 @@ import InstallPrompt from './components/InstallPrompt';
 import AssetChart from './components/AssetChart';
 import CloseTradeModal from './components/CloseTradeModal';
 import AddToPositionModal from './components/AddToPositionModal';
+import { useWatcher } from './hooks/useWatcher';
+import WatcherSidebar from './components/WatcherSidebar';
+import WatcherToast from './components/WatcherToast';
 
 function fmt(n: number | undefined, decimals = 2): string {
   if (n === undefined || isNaN(n)) return '—';
@@ -40,6 +43,17 @@ export default function App() {
   const [chartSymbol, setChartSymbol] = useState<string | null>(null);
   const [closeTradeTarget, setCloseTradeTarget] = useState<Holding | null>(null);
   const [addToTarget, setAddToTarget] = useState<Holding | null>(null);
+  const [watcherOpen, setWatcherOpen] = useState(false);
+  const {
+    watchlist,
+    currentSignals,
+    pastSignals,
+    prices: watcherPrices,
+    activeToast,
+    addToWatchlist,
+    removeFromWatchlist,
+    dismissToast,
+  } = useWatcher();
 
   const symbols = useMemo(() => holdings.map(h => h.symbol), [holdings]);
   const { prices, prevPrices, volumes } = useCryptoPrices(symbols);
@@ -169,7 +183,6 @@ export default function App() {
                 <span>Live Price</span>
                 <span>Value</span>
                 <span>P&amp;L</span>
-                <span>24h Vol</span>
                 <span></span>
               </div>
               {sorted.map(h => (
@@ -178,11 +191,9 @@ export default function App() {
                   holding={h}
                   livePrice={h.livePrice}
                   prevPrice={prevPrices[h.symbol]}
-                  volume={volumes[h.symbol]}
                   onEdit={handleEdit}
                   onDelete={removeHolding}
                   onViewChart={handleViewChart}
-                  onVolumeClick={handleViewChart}
                   onCloseTrade={handleOpenCloseTrade}
                   onAddTo={handleAddTo}
                 />
@@ -193,6 +204,31 @@ export default function App() {
       </main>
 
       <InstallPrompt />
+
+      {/* Watcher Toggle */}
+      {!watcherOpen && (
+        <button className="watcher-toggle" onClick={() => setWatcherOpen(true)}>
+          WATCHER
+          {currentSignals.length > 0 && (
+            <span className="watcher-toggle-badge">{currentSignals.length}</span>
+          )}
+        </button>
+      )}
+
+      {/* Watcher Sidebar */}
+      <WatcherSidebar
+        isOpen={watcherOpen}
+        onClose={() => setWatcherOpen(false)}
+        watchlist={watchlist}
+        currentSignals={currentSignals}
+        pastSignals={pastSignals}
+        prices={watcherPrices}
+        onAdd={addToWatchlist}
+        onRemove={removeFromWatchlist}
+      />
+
+      {/* Watcher Toast */}
+      <WatcherToast signal={activeToast} onDismiss={dismissToast} />
 
       {showModal && (
         <AddEditModal
