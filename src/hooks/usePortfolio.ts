@@ -15,6 +15,7 @@ function loadFromStorage(): Holding[] {
 interface UsePortfolioResult {
   holdings: Holding[];
   addOrUpdateHolding: (symbol: string, avgPrice: string | number, qty: string | number) => void;
+  addToHolding: (symbol: string, newPrice: number, newQty: number) => void;
   removeHolding: (symbol: string) => void;
 }
 
@@ -38,9 +39,18 @@ export function usePortfolio(): UsePortfolioResult {
     });
   };
 
+  const addToHolding = (symbol: string, newPrice: number, newQty: number): void => {
+    setHoldings(prev => prev.map(h => {
+      if (h.symbol !== symbol) return h;
+      const totalQty = h.qty + newQty;
+      const newAvgPrice = (h.avgPrice * h.qty + newPrice * newQty) / totalQty;
+      return { symbol, avgPrice: newAvgPrice, qty: totalQty };
+    }));
+  };
+
   const removeHolding = (symbol: string): void => {
     setHoldings(prev => prev.filter(h => h.symbol !== symbol));
   };
 
-  return { holdings, addOrUpdateHolding, removeHolding };
+  return { holdings, addOrUpdateHolding, addToHolding, removeHolding };
 }

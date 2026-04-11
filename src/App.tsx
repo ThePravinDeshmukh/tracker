@@ -8,7 +8,7 @@ import { Holding, EnrichedHolding, SortKey } from './types';
 import InstallPrompt from './components/InstallPrompt';
 import AssetChart from './components/AssetChart';
 import CloseTradeModal from './components/CloseTradeModal';
-import { useRecommendations } from './hooks/useRecommendations';
+import AddToPositionModal from './components/AddToPositionModal';
 
 function fmt(n: number | undefined, decimals = 2): string {
   if (n === undefined || isNaN(n)) return '—';
@@ -33,16 +33,16 @@ function sortHoldings(holdings: EnrichedHolding[], sortBy: SortKey): EnrichedHol
 }
 
 export default function App() {
-  const { holdings, addOrUpdateHolding, removeHolding } = usePortfolio();
+  const { holdings, addOrUpdateHolding, addToHolding, removeHolding } = usePortfolio();
   const [showModal, setShowModal] = useState(false);
   const [editTarget, setEditTarget] = useState<Holding | null>(null);
-  const [sortBy, setSortBy] = useState<SortKey>('value');
+  const [sortBy, setSortBy] = useState<SortKey>('name');
   const [chartSymbol, setChartSymbol] = useState<string | null>(null);
   const [closeTradeTarget, setCloseTradeTarget] = useState<Holding | null>(null);
+  const [addToTarget, setAddToTarget] = useState<Holding | null>(null);
 
   const symbols = useMemo(() => holdings.map(h => h.symbol), [holdings]);
   const { prices, prevPrices, volumes } = useCryptoPrices(symbols);
-  const recommendations = useRecommendations(symbols);
 
   const enriched = useMemo(
     () => holdings.map(h => enrichHolding(h, prices[h.symbol])),
@@ -83,6 +83,14 @@ export default function App() {
 
   const handleCloseTradeModal = (): void => {
     setCloseTradeTarget(null);
+  };
+
+  const handleAddTo = (holding: Holding): void => {
+    setAddToTarget(holding);
+  };
+
+  const handleCloseAddTo = (): void => {
+    setAddToTarget(null);
   };
 
   return (
@@ -162,7 +170,6 @@ export default function App() {
                 <span>Value</span>
                 <span>P&amp;L</span>
                 <span>24h Vol</span>
-                <span>Signal</span>
                 <span></span>
               </div>
               {sorted.map(h => (
@@ -172,12 +179,12 @@ export default function App() {
                   livePrice={h.livePrice}
                   prevPrice={prevPrices[h.symbol]}
                   volume={volumes[h.symbol]}
-                  recommendation={recommendations[h.symbol]}
                   onEdit={handleEdit}
                   onDelete={removeHolding}
                   onViewChart={handleViewChart}
                   onVolumeClick={handleViewChart}
                   onCloseTrade={handleOpenCloseTrade}
+                  onAddTo={handleAddTo}
                 />
               ))}
             </div>
@@ -201,6 +208,14 @@ export default function App() {
           livePrice={prices[closeTradeTarget.symbol]}
           onConfirm={removeHolding}
           onClose={handleCloseTradeModal}
+        />
+      )}
+
+      {addToTarget && (
+        <AddToPositionModal
+          holding={addToTarget}
+          onConfirm={(newPrice, newQty) => addToHolding(addToTarget.symbol, newPrice, newQty)}
+          onClose={handleCloseAddTo}
         />
       )}
 

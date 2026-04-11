@@ -1,18 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
-import { Holding, RecommendationDetail } from '../types';
+import { Holding } from '../types';
 
 interface Props {
   holding: Holding;
   livePrice: number | undefined;
   prevPrice: number | undefined;
   volume: number | undefined;
-  recommendation: RecommendationDetail | undefined;
   onEdit: (holding: Holding) => void;
   onDelete: (symbol: string) => void;
   onViewChart: (symbol: string) => void;
   onVolumeClick: (symbol: string) => void;
   onCloseTrade: (holding: Holding) => void;
+  onAddTo: (holding: Holding) => void;
 }
 
 function fmtVolume(n: number): string {
@@ -34,14 +34,10 @@ function fmtPrice(n: number | undefined): string {
   return fmt(n, 6);
 }
 
-export default function HoldingRow({ holding, livePrice, prevPrice, volume, recommendation, onEdit, onDelete, onViewChart, onVolumeClick, onCloseTrade }: Props) {
+export default function HoldingRow({ holding, livePrice, prevPrice, volume, onEdit, onDelete, onViewChart, onVolumeClick, onCloseTrade, onAddTo }: Props) {
   const { symbol, avgPrice, qty } = holding;
   const [flash, setFlash] = useState('');
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
   const prevRef = useRef<number | undefined>(prevPrice);
-  const badgeRef = useRef<HTMLSpanElement>(null);
-  const tooltipRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!livePrice || !prevRef.current) { prevRef.current = livePrice; return; }
@@ -52,30 +48,6 @@ export default function HoldingRow({ holding, livePrice, prevPrice, volume, reco
       return () => clearTimeout(t);
     }
   }, [livePrice]);
-
-  useEffect(() => {
-    if (!showTooltip) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        tooltipRef.current && !tooltipRef.current.contains(e.target as Node) &&
-        badgeRef.current && !badgeRef.current.contains(e.target as Node)
-      ) {
-        setShowTooltip(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showTooltip]);
-
-  const handleBadgeClick = () => {
-    if (showTooltip) { setShowTooltip(false); return; }
-    const rect = badgeRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const tooltipWidth = 280;
-    const left = Math.min(rect.left, window.innerWidth - tooltipWidth - 12);
-    setTooltipStyle({ position: 'fixed', top: rect.bottom + 8, left, width: tooltipWidth, zIndex: 500 });
-    setShowTooltip(true);
-  };
 
   const invested = avgPrice * qty;
   const currentValue = livePrice ? livePrice * qty : null;
@@ -135,47 +107,12 @@ export default function HoldingRow({ holding, livePrice, prevPrice, volume, reco
         </div>
       </div>
 
-      <div className="col">
-        <div className="label">Signal</div>
-        {recommendation ? (
-          <span
-            ref={badgeRef}
-            className={`rec-badge rec-${recommendation.signal.toLowerCase()} rec-badge-clickable`}
-            onClick={handleBadgeClick}
-            title="Tap for signal breakdown"
-          >
-            {recommendation.signal}
-          </span>
-        ) : (
-          <span className="loading-dot">•••</span>
-        )}
-      </div>
-
       <div className="row-actions">
+        <button className="btn-icon add" onClick={() => onAddTo(holding)} title="Add to position">＋</button>
         <button className="btn-icon edit" onClick={() => onEdit(holding)} title="Edit">✎</button>
         <button className="btn-icon close-trade" onClick={() => onCloseTrade(holding)} title="Close trade">⊗</button>
-        <button className="btn-icon del" onClick={() => onDelete(symbol)} title="Remove">✕</button>
+        <button className="btn-icon del" onClick={() => { if (window.confirm(`Remove ${symbol} from portfolio?`)) onDelete(symbol); }} title="Remove">✕</button>
       </div>
-
-      {showTooltip && recommendation && (
-        <div ref={tooltipRef} className="signal-tooltip" style={tooltipStyle}>
-          <div className="signal-tooltip-header">Signal Breakdown — {symbol}</div>
-          {recommendation.details.map(detail => (
-            <div key={detail.indicator} className="signal-tooltip-row">
-              <div className="signal-tooltip-indicator">
-                <span className="signal-tooltip-name">{detail.indicator}</span>
-                <span className={`rec-badge rec-${detail.signal.toLowerCase()} signal-tooltip-badge`}>
-                  {detail.signal}
-                </span>
-              </div>
-              <div className="signal-tooltip-reason">{detail.reason}</div>
-            </div>
-          ))}
-          <div className="signal-tooltip-footer">
-            60 × 1h candles · refreshed every 5 min · not financial advice
-          </div>
-        </div>
-      )}
     </div>
   );
 }
