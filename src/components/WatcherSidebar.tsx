@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { WatcherSignal } from '../types';
+import { RefreshResult } from '../hooks/useWatcher';
 import { useAvailablePairs } from '../hooks/useAvailablePairs';
 
 const MAX_WATCHLIST = 20;
@@ -11,15 +12,19 @@ interface Props {
   currentSignals: WatcherSignal[];
   pastSignals: WatcherSignal[];
   prices: Record<string, number>;
+  isChecking: boolean;
+  lastChecked: number | null;
+  refreshResult: RefreshResult | null;
   onAdd: (symbol: string) => void;
   onRemove: (symbol: string) => void;
+  onRefresh: () => void;
 }
 
 function formatRelativeTime(timestamp: number): string {
   const seconds = Math.floor((Date.now() - timestamp) / 1000);
   if (seconds < 60) return `${seconds}s ago`;
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}min ago`;
+  if (minutes < 60) return `${minutes}m ago`;
   return `${Math.floor(minutes / 60)}h ago`;
 }
 
@@ -34,12 +39,17 @@ export default function WatcherSidebar({
   currentSignals,
   pastSignals,
   prices,
+  isChecking,
+  lastChecked,
+  refreshResult,
   onAdd,
   onRemove,
+  onRefresh,
 }: Props) {
   const [coinSearch, setCoinSearch] = useState('');
   const [showAddInput, setShowAddInput] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const { allSymbols } = useAvailablePairs();
 
@@ -61,6 +71,14 @@ export default function WatcherSidebar({
     }
   }, [isOpen]);
 
+  // Show notification for 4 seconds after each refresh
+  useEffect(() => {
+    if (!refreshResult) return;
+    setShowNotification(true);
+    const timer = setTimeout(() => setShowNotification(false), 4000);
+    return () => clearTimeout(timer);
+  }, [refreshResult?.checkedAt]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const filteredCoins = allSymbols
     .filter(c => !watchlist.includes(c))
     .filter(c => c.toLowerCase().includes(coinSearch.toLowerCase()))
@@ -78,6 +96,14 @@ export default function WatcherSidebar({
     setShowDropdown(true);
   };
 
+  const notificationText = refreshResult
+    ? refreshResult.newCount > 0
+      ? `${refreshResult.newCount} new signal${refreshResult.newCount > 1 ? 's' : ''} found`
+      : 'No new signals'
+    : null;
+
+  const notificationIsNew = refreshResult ? refreshResult.newCount > 0 : false;
+
   return (
     <>
       {isOpen && <div className="watcher-overlay" onClick={onClose} />}
@@ -85,8 +111,35 @@ export default function WatcherSidebar({
         {/* Header */}
         <div className="watcher-header">
           <span className="watcher-title">Watcher</span>
-          <button className="btn-icon" onClick={onClose}>✕</button>
+          <div className="watcher-header-actions">
+            <button
+              className={`watcher-refresh-btn${isChecking ? ' spinning' : ''}`}
+              onClick={onRefresh}
+              disabled={isChecking}
+              title="Refresh signals"
+            >
+              ↻
+            </button>
+            <button className="btn-icon" onClick={onClose}>✕</button>
+          </div>
         </div>
+
+        {/* Status bar */}
+        <div className="watcher-status-bar">
+          {isChecking
+            ? 'Checking…'
+            : lastChecked
+            ? `Last checked ${formatRelativeTime(lastChecked)}`
+            : 'Not checked yet'}
+        </div>
+
+        {/* Refresh notification */}
+        {showNotification && notificationText && (
+          <div className={`watcher-notification${notificationIsNew ? ' has-signals' : ''}`}>
+            {notificationIsNew ? '▲ ' : '— '}
+            {notificationText}
+          </div>
+        )}
 
         <div className="watcher-body">
           {/* Current Signals */}
