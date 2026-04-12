@@ -786,52 +786,88 @@
 
 @media (max-width: 600px) {
   .watcher-sidebar { width: 100vw; }
+  .pulse-sidebar    { width: 100vw; }
 }
 
-/* ── Momentum Panel (Market Pulse) ────────────────────────────────────────── */
-.momentum-panel {
+/* ── Market Pulse Sidebar ───────────────────────────────────────────────────── */
+/* Wider than the watcher sidebar to fit the pulse table comfortably */
+.pulse-sidebar { width: 380px; }
+
+.pulse-sidebar-icon { color: var(--accent); margin-right: 4px; }
+
+/* ── Pulse Table (sidebar card layout) ─────────────────────────────────────── */
+.pulse-empty {
+  padding: 16px 0;
+  font-size: 12px;
+  font-family: var(--mono);
+  text-align: center;
+}
+
+.pulse-table-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Two-line card per coin */
+.pulse-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  margin-bottom: 24px;
-  overflow: hidden;
+  border-radius: 8px;
+  padding: 8px 10px;
+  transition: background 0.12s;
 }
+.pulse-card:hover { background: rgba(255,255,255,0.03); }
 
-.momentum-panel-header {
+.pulse-card-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 20px;
-  cursor: pointer;
-  user-select: none;
-  border-bottom: 1px solid var(--border);
-  transition: background 0.15s;
+  gap: 6px;
+  margin-bottom: 4px;
 }
-.momentum-panel-header:hover { background: var(--surface2); }
-
-.momentum-panel-title {
+.pulse-card-top-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pulse-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.pulse-card-bottom-right {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.pulse-asset {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.pulse-coin-icon {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+.pulse-symbol {
   font-family: var(--mono);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--text);
 }
-.momentum-panel-icon { color: var(--accent); font-size: 15px; }
+.pulse-ret     { font-size: 12px; font-weight: 600; }
+.pulse-ret-sm  { font-size: 11px; }
+.pulse-price   { font-size: 11px; }
+.pulse-vol-sm  { font-size: 10px; }
 
-.momentum-toggle-btn {
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-size: 11px;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-}
-
+/* ── Momentum badge (stress count) ──────────────────────────────────────────── */
 .momentum-badge {
   background: var(--accent2);
   color: #fff;
@@ -846,103 +882,6 @@
 .momentum-badge--sm {
   font-size: 9px;
   padding: 1px 5px;
-}
-
-.momentum-panel-body {
-  padding: 16px 20px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.momentum-section-label {
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.momentum-bottom-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-.momentum-section--stress,
-.momentum-section--corr {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px;
-}
-
-/* ── Pulse Table ────────────────────────────────────────────────────────────── */
-.pulse-table-wrap {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-}
-.pulse-table-header {
-  display: grid;
-  grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr 1fr;
-  gap: 8px;
-  padding: 8px 14px;
-  background: var(--surface2);
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-  border-bottom: 1px solid var(--border);
-}
-.pulse-table-row {
-  display: grid;
-  grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr 1fr;
-  gap: 8px;
-  padding: 9px 14px;
-  border-bottom: 1px solid var(--border);
-  align-items: center;
-  transition: background 0.12s;
-  font-size: 13px;
-}
-.pulse-table-row:last-child { border-bottom: none; }
-.pulse-table-row:hover { background: var(--surface2); }
-
-.pulse-asset {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.pulse-coin-icon {
-  width: 24px; height: 24px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 700;
-  color: #fff;
-  flex-shrink: 0;
-}
-.pulse-symbol {
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text);
-}
-.pulse-price { font-size: 12px; color: var(--text); }
-.pulse-ret   { font-size: 12px; }
-.pulse-vol   { font-size: 12px; }
-
-.pulse-table-empty {
-  padding: 24px;
-  text-align: center;
-  color: var(--muted);
-  font-size: 13px;
-  font-family: var(--mono);
 }
 
 /* ── Regime Badge ───────────────────────────────────────────────────────────── */
@@ -1087,23 +1026,3 @@
 .corr-bar--neg { background: var(--accent2); }
 .corr-value { font-size: 11px; text-align: right; }
 
-/* ── Responsive ─────────────────────────────────────────────────────────────── */
-@media (max-width: 900px) {
-  .momentum-bottom-row {
-    grid-template-columns: 1fr;
-  }
-  .pulse-table-header,
-  .pulse-table-row {
-    grid-template-columns: 2fr 1.2fr 0.8fr 0.8fr 0.8fr 0.8fr;
-    font-size: 11px;
-  }
-}
-@media (max-width: 600px) {
-  .momentum-panel-body { padding: 12px; }
-  .pulse-table-header { display: none; }
-  .pulse-table-row {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto;
-    gap: 4px 8px;
-  }
-}
