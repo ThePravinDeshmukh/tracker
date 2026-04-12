@@ -35,3 +35,28 @@ export interface WatcherSignal {
 export interface WatchedCoin {
   symbol: string;
 }
+
+// --- Momentum Tracker (Market Pulse) ---
+
+export type Regime = 'high_vol' | 'normal' | 'loading';
+
+export interface MomentumRow {
+  symbol: string;
+  lastPrice: number;
+  ret1m: number | null;   // % change from 1 min ago
+  ret5m: number | null;   // % change from 5 min ago
+  vol15m: number | null;  // std dev of 1-min returns over last 15 min
+  regime: Regime;
+}
+
+export interface StressEvent {
+  symbol: string;
+  price: number;
+  ret1m: number;          // signed % that triggered the event
+  triggeredAt: number;    // unix ms
+}
+
+export interface CorrelationResult {
+  symbol: string;
+  correlation: number;    // Pearson, –1 to +1
+}

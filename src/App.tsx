@@ -12,6 +12,8 @@ import AddToPositionModal from './components/AddToPositionModal';
 import { useWatcher } from './hooks/useWatcher';
 import WatcherSidebar from './components/WatcherSidebar';
 import WatcherToast from './components/WatcherToast';
+import { useMomentum } from './hooks/useMomentum';
+import MomentumPanel from './components/MomentumPanel';
 
 function fmt(n: number | undefined, decimals = 2): string {
   if (n === undefined || isNaN(n)) return '—';
@@ -59,8 +61,13 @@ export default function App() {
     refresh,
   } = useWatcher();
 
-  const symbols = useMemo(() => holdings.map(h => h.symbol), [holdings]);
-  const { prices, prevPrices, volumes } = useCryptoPrices(symbols);
+  // Include watchlist symbols so the momentum panel covers both portfolio + watchlist
+  const allSymbols = useMemo(
+    () => Array.from(new Set([...holdings.map(h => h.symbol), ...watchlist])),
+    [holdings, watchlist]
+  );
+  const { prices, prevPrices, volumes } = useCryptoPrices(allSymbols);
+  const { momentumRows, stressEvents, computeCorrelations } = useMomentum(allSymbols, prices);
 
   const enriched = useMemo(
     () => holdings.map(h => enrichHolding(h, prices[h.symbol])),
@@ -150,6 +157,14 @@ export default function App() {
             <div className="card-value mono">{holdings.length}</div>
           </div>
         </div>
+
+        {/* Market Pulse — Momentum Tracker */}
+        <MomentumPanel
+          rows={momentumRows}
+          stressEvents={stressEvents}
+          computeCorrelations={computeCorrelations}
+          symbols={allSymbols}
+        />
 
         {/* Holdings Table */}
         <div className="table-section">
