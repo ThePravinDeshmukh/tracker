@@ -30,7 +30,8 @@ type OnTick = (symbol: string, price: number, volume: number) => void;
 function openTickerStream(
   url: string,
   onTick: OnTick,
-  onError: () => void
+  onError: () => void,
+  onClose: (event: CloseEvent) => void
 ): WebSocket {
   const ws = new WebSocket(url);
   ws.onmessage = (event: MessageEvent) => {
@@ -44,6 +45,7 @@ function openTickerStream(
     } catch {}
   };
   ws.onerror = onError;
+  ws.onclose = onClose;
   return ws;
 }
 
@@ -101,30 +103,85 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
     const upper = symbols.map(s => s.toUpperCase());
     const spotSymbols = upper.filter(s => !futuresOnlySet.has(s));
     const futuresSymbols = upper.filter(s => futuresOnlySet.has(s));
+    const spotPairs = spotSymbols.map(toUsdtPair);
+    const futuresPairs = futuresSymbols.map(toUsdtPair);
 
-    const connections: WebSocket[] = [];
+    // Mutable state scoped to this effect run — plain objects to avoid re-renders
+    const wsRefs: [{ current: WebSocket | null }, { current: WebSocket | null }] = [
+      { current: null }, { current: null },
+    ];
+    const reconnectTimers: [
+      { current: ReturnType<typeof setTimeout> | null },
+      { current: ReturnType<typeof setTimeout> | null }
+    ] = [
+      { current: null }, { current: null },
+    ];
+    let deliberatelyClosed = false;
 
-    if (spotSymbols.length > 0) {
-      const spotPairs = spotSymbols.map(toUsdtPair);
+    function connect(index: 0 | 1): void {
+      const url = index === 0
+        ? buildStreamUrl(SPOT_WS_URL, spotPairs)
+        : buildStreamUrl(FUTURES_WS_URL, futuresPairs);
+      const syms = index === 0 ? spotSymbols : futuresSymbols;
+      const rest = index === 0 ? SPOT_REST_URL : FUTURES_REST_URL;
+
       const ws = openTickerStream(
-        buildStreamUrl(SPOT_WS_URL, spotPairs),
+        url,
         applyTick,
-        () => fetchPricesFallback(spotSymbols, SPOT_REST_URL, setPrices)
+        () => fetchPricesFallback(syms, rest, setPrices),
+        (event: CloseEvent) => {
+          wsRefs[index].current = null;
+          if (deliberatelyClosed || event.wasClean) return;
+          reconnectTimers[index].current = setTimeout(() => {
+            reconnectTimers[index].current = null;
+            if (!deliberatelyClosed) connect(index);
+          }, 2000);
+        }
       );
-      connections.push(ws);
+      wsRefs[index].current = ws;
     }
 
-    if (futuresSymbols.length > 0) {
-      const futuresPairs = futuresSymbols.map(toUsdtPair);
-      const ws = openTickerStream(
-        buildStreamUrl(FUTURES_WS_URL, futuresPairs),
-        applyTick,
-        () => fetchPricesFallback(futuresSymbols, FUTURES_REST_URL, setPrices)
-      );
-      connections.push(ws);
+    if (spotSymbols.length > 0)    connect(0);
+    if (futuresSymbols.length > 0) connect(1);
+
+    function handleVisibilityChange(): void {
+      if (document.visibilityState !== 'visible') return;
+
+      // Serve fresh prices via REST immediately while new socket handshake completes
+      if (spotSymbols.length > 0)
+        void fetchPricesFallback(spotSymbols, SPOT_REST_URL, setPrices);
+      if (futuresSymbols.length > 0)
+        void fetchPricesFallback(futuresSymbols, FUTURES_REST_URL, setPrices);
+
+      // Reconnect any dead sockets
+      for (const index of [0, 1] as const) {
+        const ws = wsRefs[index].current;
+        const isDead = ws === null
+          || ws.readyState === WebSocket.CLOSED
+          || ws.readyState === WebSocket.CLOSING;
+        if (!isDead) continue;
+
+        // Cancel pending close-handler reconnect to prevent double-connection
+        if (reconnectTimers[index].current !== null) {
+          clearTimeout(reconnectTimers[index].current!);
+          reconnectTimers[index].current = null;
+        }
+
+        const hasSymbols = index === 0 ? spotSymbols.length > 0 : futuresSymbols.length > 0;
+        if (hasSymbols) connect(index);
+      }
     }
 
-    return () => connections.forEach(ws => ws.close());
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      deliberatelyClosed = true;
+      for (const t of reconnectTimers) {
+        if (t.current !== null) { clearTimeout(t.current); t.current = null; }
+      }
+      for (const ref of wsRefs) { ref.current?.close(); ref.current = null; }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [symbols.join(','), futuresKey]); // eslint-disable-line
 
   return { prices, prevPrices, volumes };
