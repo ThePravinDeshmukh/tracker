@@ -9,11 +9,8 @@ import InstallPrompt from './components/InstallPrompt';
 import AssetChart from './components/AssetChart';
 import CloseTradeModal from './components/CloseTradeModal';
 import AddToPositionModal from './components/AddToPositionModal';
-import { useWatcher } from './hooks/useWatcher';
-import WatcherSidebar from './components/WatcherSidebar';
-import WatcherToast from './components/WatcherToast';
 import { useMomentum } from './hooks/useMomentum';
-import MomentumPanel from './components/MomentumPanel';
+import MarketPulseSidebar from './components/MarketPulseSidebar';
 
 function fmt(n: number | undefined, decimals = 2): string {
   if (n === undefined || isNaN(n)) return '—';
@@ -45,29 +42,11 @@ export default function App() {
   const [chartSymbol, setChartSymbol] = useState<string | null>(null);
   const [closeTradeTarget, setCloseTradeTarget] = useState<Holding | null>(null);
   const [addToTarget, setAddToTarget] = useState<Holding | null>(null);
-  const [watcherOpen, setWatcherOpen] = useState(false);
-  const {
-    watchlist,
-    currentSignals,
-    pastSignals,
-    prices: watcherPrices,
-    activeToast,
-    isChecking,
-    lastChecked,
-    refreshResult,
-    addToWatchlist,
-    removeFromWatchlist,
-    dismissToast,
-    refresh,
-  } = useWatcher();
+  const [pulseOpen, setPulseOpen] = useState(false);
 
-  // Include watchlist symbols so the momentum panel covers both portfolio + watchlist
-  const allSymbols = useMemo(
-    () => Array.from(new Set([...holdings.map(h => h.symbol), ...watchlist])),
-    [holdings, watchlist]
-  );
-  const { prices, prevPrices, volumes } = useCryptoPrices(allSymbols);
-  const { momentumRows, stressEvents, computeCorrelations } = useMomentum(allSymbols, prices);
+  const symbols = useMemo(() => holdings.map(h => h.symbol), [holdings]);
+  const { prices, prevPrices, volumes } = useCryptoPrices(symbols);
+  const { momentumRows, stressEvents, computeCorrelations } = useMomentum(symbols, prices);
 
   const enriched = useMemo(
     () => holdings.map(h => enrichHolding(h, prices[h.symbol])),
@@ -94,29 +73,12 @@ export default function App() {
     setEditTarget(null);
   };
 
-  const handleViewChart = (symbol: string): void => {
-    setChartSymbol(symbol);
-  };
-
-  const handleCloseChart = (): void => {
-    setChartSymbol(null);
-  };
-
-  const handleOpenCloseTrade = (holding: Holding): void => {
-    setCloseTradeTarget(holding);
-  };
-
-  const handleCloseTradeModal = (): void => {
-    setCloseTradeTarget(null);
-  };
-
-  const handleAddTo = (holding: Holding): void => {
-    setAddToTarget(holding);
-  };
-
-  const handleCloseAddTo = (): void => {
-    setAddToTarget(null);
-  };
+  const handleViewChart = (symbol: string): void => setChartSymbol(symbol);
+  const handleCloseChart = (): void => setChartSymbol(null);
+  const handleOpenCloseTrade = (holding: Holding): void => setCloseTradeTarget(holding);
+  const handleCloseTradeModal = (): void => setCloseTradeTarget(null);
+  const handleAddTo = (holding: Holding): void => setAddToTarget(holding);
+  const handleCloseAddTo = (): void => setAddToTarget(null);
 
   return (
     <div className="app">
@@ -157,14 +119,6 @@ export default function App() {
             <div className="card-value mono">{holdings.length}</div>
           </div>
         </div>
-
-        {/* Market Pulse — Momentum Tracker */}
-        <MomentumPanel
-          rows={momentumRows}
-          stressEvents={stressEvents}
-          computeCorrelations={computeCorrelations}
-          symbols={allSymbols}
-        />
 
         {/* Holdings Table */}
         <div className="table-section">
@@ -224,34 +178,25 @@ export default function App() {
 
       <InstallPrompt />
 
-      {/* Watcher Toggle */}
-      {!watcherOpen && (
-        <button className="watcher-toggle" onClick={() => setWatcherOpen(true)}>
-          WATCHER
-          {currentSignals.length > 0 && (
-            <span className="watcher-toggle-badge">{currentSignals.length}</span>
+      {/* Market Pulse Toggle */}
+      {!pulseOpen && (
+        <button className="watcher-toggle" onClick={() => setPulseOpen(true)}>
+          PULSE
+          {stressEvents.length > 0 && (
+            <span className="watcher-toggle-badge">{stressEvents.length}</span>
           )}
         </button>
       )}
 
-      {/* Watcher Sidebar */}
-      <WatcherSidebar
-        isOpen={watcherOpen}
-        onClose={() => setWatcherOpen(false)}
-        watchlist={watchlist}
-        currentSignals={currentSignals}
-        pastSignals={pastSignals}
-        prices={watcherPrices}
-        isChecking={isChecking}
-        lastChecked={lastChecked}
-        refreshResult={refreshResult}
-        onAdd={addToWatchlist}
-        onRemove={removeFromWatchlist}
-        onRefresh={refresh}
+      {/* Market Pulse Sidebar */}
+      <MarketPulseSidebar
+        isOpen={pulseOpen}
+        onClose={() => setPulseOpen(false)}
+        rows={momentumRows}
+        stressEvents={stressEvents}
+        computeCorrelations={computeCorrelations}
+        symbols={symbols}
       />
-
-      {/* Watcher Toast */}
-      <WatcherToast signal={activeToast} onDismiss={dismissToast} />
 
       {showModal && (
         <AddEditModal
