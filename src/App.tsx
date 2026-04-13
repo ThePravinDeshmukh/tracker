@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import './App.css';
 import { usePortfolio } from './hooks/usePortfolio';
+import { useWatchlist } from './hooks/useWatchlist';
 import { useCryptoPrices } from './hooks/useCryptoPrices';
 import HoldingRow from './components/HoldingRow';
 import AddEditModal from './components/AddEditModal';
+import WatchlistPanel from './components/WatchlistPanel';
 import { Holding, EnrichedHolding, SortKey } from './types';
 import InstallPrompt from './components/InstallPrompt';
 import AssetChart from './components/AssetChart';
@@ -11,6 +13,8 @@ import CloseTradeModal from './components/CloseTradeModal';
 import AddToPositionModal from './components/AddToPositionModal';
 import { useMomentum } from './hooks/useMomentum';
 import MarketPulseSidebar from './components/MarketPulseSidebar';
+
+type ActiveTab = 'holdings' | 'watchlist';
 
 function fmt(n: number | undefined, decimals = 2): string {
   if (n === undefined || isNaN(n)) return '—';
@@ -36,6 +40,9 @@ function sortHoldings(holdings: EnrichedHolding[], sortBy: SortKey): EnrichedHol
 
 export default function App() {
   const { holdings, addOrUpdateHolding, addToHolding, removeHolding } = usePortfolio();
+  const { watchlist, addToWatchlist, removeFromWatchlist } = useWatchlist();
+
+  const [activeTab, setActiveTab] = useState<ActiveTab>('holdings');
   const [showModal, setShowModal] = useState(false);
   const [editTarget, setEditTarget] = useState<Holding | null>(null);
   const [sortBy, setSortBy] = useState<SortKey>('name');
@@ -44,9 +51,14 @@ export default function App() {
   const [addToTarget, setAddToTarget] = useState<Holding | null>(null);
   const [pulseOpen, setPulseOpen] = useState(false);
 
-  const symbols = useMemo(() => holdings.map(h => h.symbol), [holdings]);
-  const { prices, prevPrices, volumes } = useCryptoPrices(symbols);
-  const { momentumRows, stressEvents, computeCorrelations } = useMomentum(symbols, prices);
+  // Merge portfolio + watchlist so prices and momentum cover both
+  const allSymbols = useMemo(
+    () => Array.from(new Set([...holdings.map(h => h.symbol), ...watchlist])),
+    [holdings, watchlist]
+  );
+
+  const { prices, prevPrices, volumes } = useCryptoPrices(allSymbols);
+  const { momentumRows, stressEvents, computeCorrelations } = useMomentum(allSymbols, prices);
 
   const enriched = useMemo(
     () => holdings.map(h => enrichHolding(h, prices[h.symbol])),
@@ -63,16 +75,8 @@ export default function App() {
     return { totalInvested, totalValue, totalPnl, totalPct };
   }, [enriched]);
 
-  const handleEdit = (holding: Holding): void => {
-    setEditTarget(holding);
-    setShowModal(true);
-  };
-
-  const handleClose = (): void => {
-    setShowModal(false);
-    setEditTarget(null);
-  };
-
+  const handleEdit = (holding: Holding): void => { setEditTarget(holding); setShowModal(true); };
+  const handleClose = (): void => { setShowModal(false); setEditTarget(null); };
   const handleViewChart = (symbol: string): void => setChartSymbol(symbol);
   const handleCloseChart = (): void => setChartSymbol(null);
   const handleOpenCloseTrade = (holding: Holding): void => setCloseTradeTarget(holding);
@@ -120,58 +124,96 @@ export default function App() {
           </div>
         </div>
 
-        {/* Holdings Table */}
+        {/* Holdings + Watchlist Panel */}
         <div className="table-section">
-          <div className="table-header">
-            <h2>My Holdings</h2>
-            <div className="table-controls">
-              <select
-                className="sort-select"
-                value={sortBy}
-                onChange={e => setSortBy(e.target.value as SortKey)}
-              >
-                <option value="value">Sort: Value</option>
-                <option value="pnl">Sort: P&L $</option>
-                <option value="pnlpct">Sort: P&L %</option>
-                <option value="name">Sort: Name</option>
-              </select>
-              <button className="btn primary" onClick={() => setShowModal(true)}>
-                + Add Coin
-              </button>
+          {/* Tab bar */}
+          <div className="tab-bar">
+            <button
+              className={`tab-btn${activeTab === 'holdings' ? ' active' : ''}`}
+              onClick={() => setActiveTab('holdings')}
+            >
+              My Holdings
+              {holdings.length > 0 && (
+                <span className="tab-count">{holdings.length}</span>
+              )}
+            </button>
+            <button
+              className={`tab-btn${activeTab === 'watchlist' ? ' active' : ''}`}
+              onClick={() => setActiveTab('watchlist')}
+            >
+              Watchlist
+              {watchlist.length > 0 && (
+                <span className="tab-count">{watchlist.length}</span>
+              )}
+            </button>
+
+            {/* Controls pinned to the right — tab-dependent */}
+            <div className="tab-controls">
+              {activeTab === 'holdings' && (
+                <>
+                  <select
+                    className="sort-select"
+                    value={sortBy}
+                    onChange={e => setSortBy(e.target.value as SortKey)}
+                  >
+                    <option value="value">Sort: Value</option>
+                    <option value="pnl">Sort: P&L $</option>
+                    <option value="pnlpct">Sort: P&L %</option>
+                    <option value="name">Sort: Name</option>
+                  </select>
+                  <button className="btn primary" onClick={() => setShowModal(true)}>
+                    + Add Coin
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
-          {holdings.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">◈</div>
-              <p>No holdings yet</p>
-              <p className="empty-sub">Add your first crypto to start tracking</p>
-              <button className="btn primary" onClick={() => setShowModal(true)}>Add Coin</button>
-            </div>
-          ) : (
-            <div className="holdings-list">
-              <div className="list-header">
-                <span>Asset</span>
-                <span>Avg Price</span>
-                <span>Live Price</span>
-                <span>Value</span>
-                <span>P&amp;L</span>
-                <span></span>
+          {/* Holdings tab */}
+          {activeTab === 'holdings' && (
+            holdings.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">◈</div>
+                <p>No holdings yet</p>
+                <p className="empty-sub">Add your first crypto to start tracking</p>
+                <button className="btn primary" onClick={() => setShowModal(true)}>Add Coin</button>
               </div>
-              {sorted.map(h => (
-                <HoldingRow
-                  key={h.symbol}
-                  holding={h}
-                  livePrice={h.livePrice}
-                  prevPrice={prevPrices[h.symbol]}
-                  onEdit={handleEdit}
-                  onDelete={removeHolding}
-                  onViewChart={handleViewChart}
-                  onCloseTrade={handleOpenCloseTrade}
-                  onAddTo={handleAddTo}
-                />
-              ))}
-            </div>
+            ) : (
+              <div className="holdings-list">
+                <div className="list-header">
+                  <span>Asset</span>
+                  <span>Avg Price</span>
+                  <span>Live Price</span>
+                  <span>Value</span>
+                  <span>P&amp;L</span>
+                  <span></span>
+                </div>
+                {sorted.map(h => (
+                  <HoldingRow
+                    key={h.symbol}
+                    holding={h}
+                    livePrice={h.livePrice}
+                    prevPrice={prevPrices[h.symbol]}
+                    onEdit={handleEdit}
+                    onDelete={removeHolding}
+                    onViewChart={handleViewChart}
+                    onCloseTrade={handleOpenCloseTrade}
+                    onAddTo={handleAddTo}
+                  />
+                ))}
+              </div>
+            )
+          )}
+
+          {/* Watchlist tab */}
+          {activeTab === 'watchlist' && (
+            <WatchlistPanel
+              watchlist={watchlist}
+              prices={prices}
+              prevPrices={prevPrices}
+              onAdd={addToWatchlist}
+              onRemove={removeFromWatchlist}
+            />
           )}
         </div>
       </main>
@@ -195,7 +237,7 @@ export default function App() {
         rows={momentumRows}
         stressEvents={stressEvents}
         computeCorrelations={computeCorrelations}
-        symbols={symbols}
+        symbols={allSymbols}
       />
 
       {showModal && (
