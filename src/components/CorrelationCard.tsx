@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CorrelationResult, MomentumRow, Regime } from '../types';
 import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
+
+const CORR_THROTTLE_MS = 10_000;
 
 interface Props {
   symbols: string[];
@@ -17,6 +19,7 @@ function lookbackLabel(regime: Regime): string {
 export default function CorrelationCard({ symbols, momentumRows, computeCorrelations }: Props) {
   const [baseSymbol, setBaseSymbol] = useState<string>(symbols[0] ?? '');
   const [results, setResults] = useState<CorrelationResult[]>([]);
+  const lastComputeRef = useRef<number>(0);
 
   // Update base symbol when symbols list changes (e.g. first coin added)
   useEffect(() => {
@@ -25,9 +28,19 @@ export default function CorrelationCard({ symbols, momentumRows, computeCorrelat
     }
   }, [symbols, baseSymbol]);
 
-  // Recompute whenever base symbol or rows change
+  // Reset throttle when the user picks a different base symbol so it computes immediately
+  useEffect(() => {
+    lastComputeRef.current = 0;
+  }, [baseSymbol]);
+
+  // Recompute correlations at most every 10s — momentumRows is in deps so the
+  // effect re-runs on ticks, but the throttle gate prevents the expensive
+  // computeCorrelations() call from executing more than once per 10s.
   useEffect(() => {
     if (!baseSymbol) return;
+    const now = Date.now();
+    if (now - lastComputeRef.current < CORR_THROTTLE_MS) return;
+    lastComputeRef.current = now;
     setResults(computeCorrelations(baseSymbol));
   }, [baseSymbol, momentumRows, computeCorrelations]);
 

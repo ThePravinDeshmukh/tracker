@@ -24,12 +24,23 @@ interface PricePoint {
 
 // ── Pure helpers ───────────────────────────────────────────────────────────────
 
-/** Find the price point closest to `targetTime` within the history array. */
+/**
+ * Find the price point closest to `targetTime`.
+ * History is always sorted ascending by time (append-only), so binary search is O(log n).
+ */
 function findClosest(history: PricePoint[], targetTime: number): PricePoint | null {
   if (history.length === 0) return null;
-  return history.reduce((best, point) =>
-    Math.abs(point.time - targetTime) < Math.abs(best.time - targetTime) ? point : best
-  );
+  let lo = 0;
+  let hi = history.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (history[mid].time < targetTime) lo = mid + 1;
+    else hi = mid;
+  }
+  if (lo === 0) return history[0];
+  const before = history[lo - 1];
+  const after = history[lo];
+  return Math.abs(after.time - targetTime) < Math.abs(before.time - targetTime) ? after : before;
 }
 
 /** Compute % return relative to reference point. Returns null if reference is missing. */
@@ -85,12 +96,12 @@ function computeVol15m(history: PricePoint[], now: number): number | null {
 /**
  * Classify regime: high_vol if current vol15m exceeds the 80th percentile
  * of recent vol15m history; otherwise normal.
+ * Expects volHistory to already be sorted ascending (maintained on insert).
  */
 function classifyRegime(vol15m: number | null, volHistory: number[]): Regime {
   if (vol15m === null || volHistory.length < 2) return 'loading';
-  const sorted = [...volHistory].sort((a, b) => a - b);
-  const idx = Math.floor((REGIME_PERCENTILE / 100) * sorted.length);
-  const threshold = sorted[Math.min(idx, sorted.length - 1)];
+  const idx = Math.floor((REGIME_PERCENTILE / 100) * volHistory.length);
+  const threshold = volHistory[Math.min(idx, volHistory.length - 1)];
   return vol15m >= threshold ? 'high_vol' : 'normal';
 }
 
@@ -129,12 +140,17 @@ export function useMomentum(symbols: string[], prices: PriceMap): UseMomentumRes
   const lastStressTimeRef = useRef<Map<string, number>>(new Map());
   // Track previous prices to detect changes
   const prevPricesRef = useRef<PriceMap>({});
+  // Throttle the computation pass to at most 1Hz — WebSocket ticks can arrive
+  // several times per second but momentum metrics don't need sub-second resolution.
+  const lastRunRef = useRef<number>(0);
 
   const [momentumRows, setMomentumRows] = useState<MomentumRow[]>([]);
   const [stressEvents, setStressEvents] = useState<StressEvent[]>([]);
 
   useEffect(() => {
     const now = Date.now();
+    if (now - lastRunRef.current < 1_000) return;
+    lastRunRef.current = now;
     const priceHistory = priceHistoryRef.current;
     const vol15mHistory = vol15mHistoryRef.current;
     const lastStressTime = lastStressTimeRef.current;
@@ -151,23 +167,30 @@ export function useMomentum(symbols: string[], prices: PriceMap): UseMomentumRes
       if (price === undefined || isNaN(price)) continue;
       if (price === prevPrices[symbol]) continue; // no change, skip
 
-      // 1. Append to rolling history and prune old points
+      // 1. Append to rolling history and prune expired points from the front.
+      //    History is kept sorted ascending (push-only), so we only need to walk
+      //    from the front — no full-array filter/copy needed on every tick.
       const history = priceHistory.get(symbol) ?? [];
       history.push({ time: now, price });
-      const pruned = history.filter(p => now - p.time <= HISTORY_WINDOW_MS);
-      priceHistory.set(symbol, pruned);
+      while (history.length > 1 && now - history[0].time > HISTORY_WINDOW_MS) {
+        history.shift();
+      }
+      priceHistory.set(symbol, history);
 
       // 2. Compute multi-timeframe returns
-      const ret1m = computeReturn(pruned, now, RET_1M_WINDOW_MS);
-      const ret5m = computeReturn(pruned, now, RET_5M_WINDOW_MS);
+      const ret1m = computeReturn(history, now, RET_1M_WINDOW_MS);
+      const ret5m = computeReturn(history, now, RET_5M_WINDOW_MS);
 
       // 3. Compute 15-min volatility
-      const vol15m = computeVol15m(pruned, now);
+      const vol15m = computeVol15m(history, now);
 
-      // 4. Update vol15m history and classify regime
+      // 4. Update vol15m history (kept sorted ascending via insertion) and classify regime.
+      //    Maintaining sorted order here means classifyRegime never needs to sort.
       if (vol15m !== null) {
         const vh = vol15mHistory.get(symbol) ?? [];
-        vh.push(vol15m);
+        const insertIdx = vh.findIndex(v => v >= vol15m);
+        if (insertIdx === -1) vh.push(vol15m);
+        else vh.splice(insertIdx, 0, vol15m);
         if (vh.length > REGIME_HISTORY_SIZE) vh.shift();
         vol15mHistory.set(symbol, vh);
       }
