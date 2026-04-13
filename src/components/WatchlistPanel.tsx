@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PriceMap } from '../types';
 import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
 import { useAvailablePairs } from '../hooks/useAvailablePairs';
@@ -18,41 +18,43 @@ function fmtPrice(price: number | undefined): string {
   return price.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 6 });
 }
 
+// Popular coins shown before API pairs load
+const POPULAR_COINS = [
+  'BTC','ETH','SOL','BNB','XRP','ADA','AVAX','DOT','MATIC','LINK',
+  'LTC','UNI','ATOM','DOGE','SUI','APT','OP','ARB','NEAR','PEPE',
+  'TRX','TON','HBAR','SHIB','FET','WIF','TIA','JUP','RENDER','SEI',
+];
+
 export default function WatchlistPanel({ watchlist, prices, prevPrices, onAdd, onRemove }: Props) {
   const [search, setSearch] = useState('');
   const [showInput, setShowInput] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { allSymbols, loading } = useAvailablePairs();
 
-  // Sort watchlist alphabetically by name
   const sorted = [...watchlist].sort((a, b) => a.localeCompare(b));
 
-  const suggestions = allSymbols
-    .filter(s => !watchlist.includes(s))
-    .filter(s => s.includes(search.toUpperCase()))
-    .slice(0, 30);
+  // Use API symbols when loaded, fall back to popular coins
+  const symbolPool = allSymbols.length > 0 ? allSymbols : POPULAR_COINS;
 
+  const suggestions = symbolPool
+    .filter(s => !watchlist.includes(s))
+    .filter(s => search === '' || s.includes(search.toUpperCase()))
+    .slice(0, 40);
+
+  // Focus input when opened
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setShowDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    if (showInput) inputRef.current?.focus();
+  }, [showInput]);
 
   const handleSelect = (symbol: string): void => {
     onAdd(symbol);
     setSearch('');
-    setShowInput(false);
-    setShowDropdown(false);
+    inputRef.current?.focus();
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    setSearch(e.target.value.toUpperCase());
-    setShowDropdown(true);
+  const cancelAdd = (): void => {
+    setShowInput(false);
+    setSearch('');
   };
 
   if (sorted.length === 0 && !showInput) {
@@ -68,82 +70,94 @@ export default function WatchlistPanel({ watchlist, prices, prevPrices, onAdd, o
 
   return (
     <div className="watchlist-panel">
-      {/* Add coin row */}
-      <div className="watchlist-add-row">
-        {showInput ? (
-          <div className="watchlist-search-wrap" ref={searchRef}>
-            <input
-              className="watcher-search-input"
-              placeholder={loading ? 'Loading pairs…' : 'Search symbol…'}
-              value={search}
-              onChange={handleSearchChange}
-              autoFocus
-              onFocus={() => search.length > 0 && setShowDropdown(true)}
-            />
-            {showDropdown && search.length > 0 && (
-              <ul className="coin-dropdown">
-                {suggestions.length > 0
-                  ? suggestions.map(coin => (
-                      <li key={coin} onClick={() => handleSelect(coin)}>{coin}</li>
-                    ))
-                  : <li className="no-match">No matches</li>
-                }
-              </ul>
-            )}
-            <button className="btn secondary" onClick={() => { setShowInput(false); setSearch(''); }}>
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <button className="btn primary" onClick={() => setShowInput(true)}>+ Add Coin</button>
-        )}
-      </div>
 
-      {/* Watchlist header row */}
-      {sorted.length > 0 && (
-        <div className="watchlist-header">
-          <span>Asset</span>
-          <span>Live Price</span>
-          <span>Change</span>
-          <span></span>
+      {/* Add coin search bar */}
+      {showInput ? (
+        <>
+          <div className="watchlist-add-bar">
+            <input
+              ref={inputRef}
+              className="watchlist-search-input"
+              placeholder={loading ? 'Loading pairs…' : 'Type to filter (e.g. BTC)'}
+              value={search}
+              onChange={e => setSearch(e.target.value.toUpperCase())}
+            />
+            <button className="btn-icon" onClick={cancelAdd} title="Cancel">✕</button>
+          </div>
+
+          {/* Inline suggestions — part of normal flow, no absolute positioning */}
+          <div className="watchlist-suggestions">
+            {suggestions.length === 0
+              ? <div className="watchlist-no-match muted">No matches for "{search}"</div>
+              : suggestions.map(coin => {
+                  const color = getCoinColor(coin);
+                  const icon  = getCoinIcon(coin);
+                  return (
+                    <button
+                      key={coin}
+                      className="watchlist-suggestion"
+                      onClick={() => handleSelect(coin)}
+                    >
+                      <span className="wsug-icon" style={{ background: color }}>{icon}</span>
+                      <span className="wsug-symbol">{coin}</span>
+                      <span className="wsug-add">+ Add</span>
+                    </button>
+                  );
+                })
+            }
+          </div>
+        </>
+      ) : (
+        <div className="watchlist-add-row">
+          <button className="btn primary" onClick={() => setShowInput(true)}>+ Add Coin</button>
         </div>
       )}
 
-      {/* Watchlist rows */}
-      {sorted.map(symbol => {
-        const price = prices[symbol];
-        const prev  = prevPrices[symbol];
-        const color = getCoinColor(symbol);
-        const icon  = getCoinIcon(symbol);
-        const changePct = price !== undefined && prev !== undefined && prev > 0
-          ? ((price - prev) / prev) * 100
-          : null;
-        const priceDir = changePct !== null ? (changePct > 0 ? 'pos' : changePct < 0 ? 'neg' : '') : '';
-
-        return (
-          <div key={symbol} className="watchlist-row">
-            <div className="watchlist-asset">
-              <span className="watchlist-coin-icon" style={{ background: color }}>{icon}</span>
-              <span className="watchlist-symbol">{symbol}</span>
-            </div>
-            <span className={`watchlist-price mono ${priceDir}`}>
-              {price !== undefined ? `$${fmtPrice(price)}` : '—'}
-            </span>
-            <span className={`watchlist-change mono ${priceDir}`}>
-              {changePct !== null
-                ? `${changePct >= 0 ? '+' : ''}${changePct.toFixed(3)}%`
-                : '—'}
-            </span>
-            <button
-              className="btn-icon del"
-              onClick={() => onRemove(symbol)}
-              title={`Remove ${symbol}`}
-            >
-              ×
-            </button>
+      {/* Coin list */}
+      {sorted.length > 0 && !showInput && (
+        <>
+          <div className="watchlist-header">
+            <span>Asset</span>
+            <span>Live Price</span>
+            <span>Change</span>
+            <span></span>
           </div>
-        );
-      })}
+          {sorted.map(symbol => {
+            const price = prices[symbol];
+            const prev  = prevPrices[symbol];
+            const color = getCoinColor(symbol);
+            const icon  = getCoinIcon(symbol);
+            const changePct = price !== undefined && prev !== undefined && prev > 0
+              ? ((price - prev) / prev) * 100
+              : null;
+            const priceDir = changePct !== null ? (changePct > 0 ? 'pos' : changePct < 0 ? 'neg' : '') : '';
+
+            return (
+              <div key={symbol} className="watchlist-row">
+                <div className="watchlist-asset">
+                  <span className="watchlist-coin-icon" style={{ background: color }}>{icon}</span>
+                  <span className="watchlist-symbol">{symbol}</span>
+                </div>
+                <span className={`watchlist-price mono ${priceDir}`}>
+                  {price !== undefined ? `$${fmtPrice(price)}` : '—'}
+                </span>
+                <span className={`watchlist-change mono ${priceDir}`}>
+                  {changePct !== null
+                    ? `${changePct >= 0 ? '+' : ''}${changePct.toFixed(3)}%`
+                    : '—'}
+                </span>
+                <button
+                  className="btn-icon del"
+                  onClick={() => onRemove(symbol)}
+                  title={`Remove ${symbol}`}
+                >
+                  ×
+                </button>
+              </div>
+            );
+          })}
+        </>
+      )}
     </div>
   );
 }
