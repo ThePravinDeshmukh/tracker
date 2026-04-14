@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
 import { Holding } from '../types';
 
+const SL_WARN_PCT = 5;
+
 interface Props {
   holding: Holding;
   livePrice: number | undefined;
@@ -46,6 +48,11 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
   const pnlPct = pnl !== null && invested > 0 ? (pnl / invested) * 100 : null;
   const color = getCoinColor(symbol);
 
+  const { stopLoss } = holding;
+  const slDistancePct = livePrice && stopLoss ? ((livePrice - stopLoss) / stopLoss) * 100 : null;
+  const isSlBreached = slDistancePct !== null && slDistancePct <= 0;
+  const isSlNear = slDistancePct !== null && slDistancePct > 0 && slDistancePct <= SL_WARN_PCT;
+
   return (
     <div className="holding-row fade-in">
       <div className="coin-info" onClick={() => onViewChart(symbol)} title="View chart" style={{ cursor: 'pointer' }}>
@@ -85,6 +92,24 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
             </>
           ) : '—'}
         </div>
+      </div>
+
+      <div className="col">
+        <div className="label">Stop Loss</div>
+        {stopLoss ? (
+          <div className={`value mono ${isSlBreached ? 'sl-breached' : isSlNear ? 'sl-near' : ''}`}>
+            <div>${fmtPrice(stopLoss)}</div>
+            <div className="sl-distance">
+              {slDistancePct === null
+                ? '—'
+                : isSlBreached
+                  ? 'BREACHED'
+                  : `${fmt(slDistancePct, 2)}% away`}
+            </div>
+          </div>
+        ) : (
+          <div className="value muted">—</div>
+        )}
       </div>
 
       <div className="row-actions">

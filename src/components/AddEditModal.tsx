@@ -4,7 +4,7 @@ import { Holding } from '../types';
 
 interface Props {
   existing: Holding | null;
-  onSave: (symbol: string, avgPrice: string, qty: string) => void;
+  onSave: (symbol: string, avgPrice: string, qty: string, stopLoss: string) => void;
   onClose: () => void;
 }
 
@@ -14,6 +14,7 @@ export default function AddEditModal({ existing, onSave, onClose }: Props) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [avgPrice, setAvgPrice] = useState(existing?.avgPrice ? String(existing.avgPrice) : '');
   const [qty, setQty] = useState(existing?.qty ? String(existing.qty) : '');
+  const [stopLoss, setStopLoss] = useState(existing?.stopLoss ? String(existing.stopLoss) : '');
   const [error, setError] = useState('');
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -62,7 +63,7 @@ export default function AddEditModal({ existing, onSave, onClose }: Props) {
     if (!symbol) return setError('Select a coin from the list');
     if (!avgPrice || parseFloat(avgPrice) <= 0) return setError('Enter a valid avg price');
     if (!qty || parseFloat(qty) <= 0) return setError('Enter a valid quantity');
-    onSave(symbol, avgPrice, qty);
+    onSave(symbol, avgPrice, qty, stopLoss);
     onClose();
   };
 
@@ -139,6 +140,18 @@ export default function AddEditModal({ existing, onSave, onClose }: Props) {
               placeholder="e.g. 0.5"
               value={qty}
               onChange={e => { setQty(e.target.value); setError(''); }}
+            />
+          </div>
+
+          <div className="field">
+            <label>Stop Loss (USD) <span className="optional">optional</span></label>
+            <input
+              type="number"
+              step="any"
+              min="0"
+              placeholder="e.g. 38000"
+              value={stopLoss}
+              onChange={e => setStopLoss(e.target.value)}
             />
           </div>
 

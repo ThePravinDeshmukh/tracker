@@ -13,6 +13,7 @@ import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
 interface Props {
   symbol: string;
   avgPrice: number;
+  stopLoss: number | undefined;
   livePrice: number | undefined;
   liveVolume: number | undefined;
   onClose: () => void;
@@ -53,8 +54,8 @@ function fmtAxisTime(ts: number, interval: TimeframeKey): string {
   return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
-function calcDomain(data: PricePoint[], avgPrice: number): [number, number] {
-  const prices = [...data.map(d => d.price), avgPrice];
+function calcDomain(data: PricePoint[], avgPrice: number, stopLoss?: number): [number, number] {
+  const prices = [...data.map(d => d.price), avgPrice, ...(stopLoss ? [stopLoss] : [])];
   const min = Math.min(...prices);
   const max = Math.max(...prices);
   const pad = (max - min) * 0.05 || max * 0.001;
@@ -65,14 +66,14 @@ function isRising(data: PricePoint[]): boolean {
   return data.length >= 2 && data[data.length - 1].price >= data[0].price;
 }
 
-export default function AssetChart({ symbol, avgPrice, livePrice, liveVolume, onClose }: Props) {
+export default function AssetChart({ symbol, avgPrice, stopLoss, livePrice, liveVolume, onClose }: Props) {
   const [interval, setInterval] = useState<TimeframeKey>('1m');
   const { data, volumeHistory, loading, error } = useAssetHistory(symbol, interval);
 
   const color = getCoinColor(symbol);
   const icon = getCoinIcon(symbol);
   const lineColor = data.length > 0 ? (isRising(data) ? '#34d48a' : '#fa5252') : '#7c6dfa';
-  const domain = data.length > 0 ? calcDomain(data, avgPrice) : undefined;
+  const domain = data.length > 0 ? calcDomain(data, avgPrice, stopLoss) : undefined;
   const maxVol = volumeHistory.length > 0 ? Math.max(...volumeHistory.map(v => v.volume)) : undefined;
 
   const syncId = `asset-${symbol}`;
@@ -165,6 +166,15 @@ export default function AssetChart({ symbol, avgPrice, livePrice, liveVolume, on
                     strokeWidth={1}
                     label={{ value: `Avg $${fmtPrice(avgPrice)}`, position: 'insideTopRight', fontSize: 10, fill: 'var(--accent)', fontFamily: 'var(--mono)' }}
                   />
+                  {stopLoss !== undefined && (
+                    <ReferenceLine
+                      y={stopLoss}
+                      stroke="var(--red)"
+                      strokeDasharray="4 3"
+                      strokeWidth={1}
+                      label={{ value: `SL $${fmtPrice(stopLoss)}`, position: 'insideBottomRight', fontSize: 10, fill: 'var(--red)', fontFamily: 'var(--mono)' }}
+                    />
+                  )}
                   <Line
                     type="monotone"
                     dataKey="price"
