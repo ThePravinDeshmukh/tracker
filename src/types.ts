@@ -60,3 +60,27 @@ export interface CorrelationResult {
   symbol: string;
   correlation: number;    // Pearson, –1 to +1
 }
+
+// --- Network Console ---
+
+export type NetworkEntryMethod = 'GET' | 'WS';
+
+export interface FetchEntry {
+  id: string;
+  method: 'GET';
+  url: string;
+  startedAt: number;        // Date.now()
+  durationMs: number | null;
+  status: number | 'ERR';   // HTTP status code, or 'ERR' on network failure
+}
+
+export interface WebSocketEntry {
+  id: string;
+  method: 'WS';
+  url: string;
+  startedAt: number;
+  durationMs: number | null; // null while live; set when closed/errored
+  status: 'CONNECTING' | 'LIVE' | 'CLOSED' | 'ERR';
+}
+
+export type NetworkEntry = FetchEntry | WebSocketEntry;

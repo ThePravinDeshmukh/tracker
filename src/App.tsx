@@ -13,6 +13,8 @@ import CloseTradeModal from './components/CloseTradeModal';
 import AddToPositionModal from './components/AddToPositionModal';
 import { useMomentum } from './hooks/useMomentum';
 import MarketPulseSidebar from './components/MarketPulseSidebar';
+import { useNetworkLog } from './hooks/useNetworkLog';
+import NetworkConsolePanel from './components/NetworkConsolePanel';
 
 type ActiveTab = 'holdings' | 'watchlist';
 
@@ -59,6 +61,7 @@ export default function App() {
 
   const { prices, prevPrices, volumes } = useCryptoPrices(allSymbols);
   const { momentumRows, stressEvents, computeCorrelations } = useMomentum(allSymbols, prices);
+  const { entries: netEntries, clearEntries } = useNetworkLog();
 
   const enriched = useMemo(
     () => holdings.map(h => enrichHolding(h, prices[h.symbol])),
@@ -274,6 +277,8 @@ export default function App() {
           onClose={handleCloseChart}
         />
       )}
+
+      <NetworkConsolePanel entries={netEntries} onClear={clearEntries} />
     </div>
   );
 }
