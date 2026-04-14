@@ -162,7 +162,7 @@
 }
 .watchlist-header {
   display: grid;
-  grid-template-columns: 200px 1fr 1fr 48px;
+  grid-template-columns: 200px 1fr 1fr 40px 40px;
   gap: 8px;
   padding: 8px 24px;
   font-family: var(--mono);
@@ -176,7 +176,7 @@
 }
 .watchlist-row {
   display: grid;
-  grid-template-columns: 200px 1fr 1fr 48px;
+  grid-template-columns: 200px 1fr 1fr 40px 40px;
   gap: 8px;
   padding: 12px 24px;
   align-items: center;
@@ -280,13 +280,13 @@
 
 @media (max-width: 900px) {
   .watchlist-header { display: none; }
-  .watchlist-row { grid-template-columns: 1fr 1fr 48px; }
+  .watchlist-row { grid-template-columns: 1fr 1fr 40px 40px; }
   .watchlist-row > .watchlist-asset { grid-column: 1 / -1; padding-bottom: 4px; }
 }
 @media (max-width: 560px) {
   .tab-btn { padding: 12px 10px; font-size: 13px; }
   .watchlist-add-row, .watchlist-add-bar { padding: 12px 16px; }
-  .watchlist-row { padding: 10px 16px; grid-template-columns: 1fr 1fr 40px; }
+  .watchlist-row { padding: 10px 16px; grid-template-columns: 1fr 1fr 36px 36px; }
   .watchlist-suggestion { padding: 9px 16px; }
 }
 
@@ -383,6 +383,7 @@
 .btn-icon.edit:hover { color: var(--accent); background: rgba(124, 109, 250, 0.1); }
 .btn-icon.close-trade:hover { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
 .btn-icon.del:hover { color: var(--red); background: rgba(250, 82, 82, 0.1); }
+.btn-icon.chart:hover { color: var(--accent); background: rgba(124, 109, 250, 0.1); }
 
 .btn.danger {
   background: var(--red); color: #fff;

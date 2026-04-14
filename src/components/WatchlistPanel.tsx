@@ -7,8 +7,10 @@ interface Props {
   watchlist: string[];
   prices: PriceMap;
   prevPrices: PriceMap;
+  change24h: PriceMap;
   onAdd: (symbol: string) => void;
   onRemove: (symbol: string) => void;
+  onViewChart: (symbol: string) => void;
 }
 
 function fmtPrice(price: number | undefined): string {
@@ -25,7 +27,7 @@ const POPULAR_COINS = [
   'TRX','TON','HBAR','SHIB','FET','WIF','TIA','JUP','RENDER','SEI',
 ];
 
-export default function WatchlistPanel({ watchlist, prices, prevPrices, onAdd, onRemove }: Props) {
+export default function WatchlistPanel({ watchlist, prices, prevPrices, change24h, onAdd, onRemove, onViewChart }: Props) {
   const [search, setSearch] = useState('');
   const [showInput, setShowInput] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -119,18 +121,17 @@ export default function WatchlistPanel({ watchlist, prices, prevPrices, onAdd, o
           <div className="watchlist-header">
             <span>Asset</span>
             <span>Live Price</span>
-            <span>Change</span>
+            <span>24h Change</span>
+            <span></span>
             <span></span>
           </div>
           {sorted.map(symbol => {
-            const price = prices[symbol];
-            const prev  = prevPrices[symbol];
-            const color = getCoinColor(symbol);
-            const icon  = getCoinIcon(symbol);
-            const changePct = price !== undefined && prev !== undefined && prev > 0
-              ? ((price - prev) / prev) * 100
-              : null;
-            const priceDir = changePct !== null ? (changePct > 0 ? 'pos' : changePct < 0 ? 'neg' : '') : '';
+            const price     = prices[symbol];
+            const color     = getCoinColor(symbol);
+            const icon      = getCoinIcon(symbol);
+            const changePct = change24h[symbol];
+            const hasChange = changePct !== undefined && !isNaN(changePct);
+            const priceDir  = hasChange ? (changePct > 0 ? 'pos' : changePct < 0 ? 'neg' : '') : '';
 
             return (
               <div key={symbol} className="watchlist-row">
@@ -142,10 +143,17 @@ export default function WatchlistPanel({ watchlist, prices, prevPrices, onAdd, o
                   {price !== undefined ? `$${fmtPrice(price)}` : '—'}
                 </span>
                 <span className={`watchlist-change mono ${priceDir}`}>
-                  {changePct !== null
-                    ? `${changePct >= 0 ? '+' : ''}${changePct.toFixed(3)}%`
+                  {hasChange
+                    ? `${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%`
                     : '—'}
                 </span>
+                <button
+                  className="btn-icon chart"
+                  onClick={() => onViewChart(symbol)}
+                  title={`View ${symbol} chart`}
+                >
+                  ▲
+                </button>
                 <button
                   className="btn-icon del"
                   onClick={() => onRemove(symbol)}

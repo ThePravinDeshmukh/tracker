@@ -59,7 +59,7 @@ export default function App() {
     [holdings, watchlist]
   );
 
-  const { prices, prevPrices, volumes } = useCryptoPrices(allSymbols);
+  const { prices, prevPrices, volumes, change24h } = useCryptoPrices(allSymbols);
   const { momentumRows, stressEvents, computeCorrelations } = useMomentum(allSymbols, prices);
   const { entries: netEntries, clearEntries } = useNetworkLog();
 
@@ -215,8 +215,10 @@ export default function App() {
               watchlist={watchlist}
               prices={prices}
               prevPrices={prevPrices}
+              change24h={change24h}
               onAdd={addToWatchlist}
               onRemove={removeFromWatchlist}
+              onViewChart={handleViewChart}
             />
           )}
         </div>
@@ -272,7 +274,7 @@ export default function App() {
       {chartSymbol && (
         <AssetChart
           symbol={chartSymbol}
-          avgPrice={holdings.find(h => h.symbol === chartSymbol)?.avgPrice ?? 0}
+          avgPrice={holdings.find(h => h.symbol === chartSymbol)?.avgPrice}
           stopLoss={holdings.find(h => h.symbol === chartSymbol)?.stopLoss}
           livePrice={prices[chartSymbol]}
           liveVolume={volumes[chartSymbol]}

@@ -12,10 +12,10 @@ import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
 
 interface Props {
   symbol: string;
-  avgPrice: number;
-  stopLoss: number | undefined;
-  livePrice: number | undefined;
-  liveVolume: number | undefined;
+  avgPrice?: number;
+  stopLoss?: number;
+  livePrice?: number;
+  liveVolume?: number;
   onClose: () => void;
 }
 
@@ -54,8 +54,12 @@ function fmtAxisTime(ts: number, interval: TimeframeKey): string {
   return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
-function calcDomain(data: PricePoint[], avgPrice: number, stopLoss?: number): [number, number] {
-  const prices = [...data.map(d => d.price), avgPrice, ...(stopLoss ? [stopLoss] : [])];
+function calcDomain(data: PricePoint[], avgPrice?: number, stopLoss?: number): [number, number] {
+  const refPrices = [
+    ...(avgPrice !== undefined ? [avgPrice] : []),
+    ...(stopLoss !== undefined ? [stopLoss] : []),
+  ];
+  const prices = [...data.map(d => d.price), ...refPrices];
   const min = Math.min(...prices);
   const max = Math.max(...prices);
   const pad = (max - min) * 0.05 || max * 0.001;
@@ -159,13 +163,15 @@ export default function AssetChart({ symbol, avgPrice, stopLoss, livePrice, live
                     width={Y_AXIS_WIDTH}
                   />
                   <Tooltip content={renderPriceTooltip} />
-                  <ReferenceLine
-                    y={avgPrice}
-                    stroke="var(--accent)"
-                    strokeDasharray="4 3"
-                    strokeWidth={1}
-                    label={{ value: `Avg $${fmtPrice(avgPrice)}`, position: 'insideTopRight', fontSize: 10, fill: 'var(--accent)', fontFamily: 'var(--mono)' }}
-                  />
+                  {avgPrice !== undefined && (
+                    <ReferenceLine
+                      y={avgPrice}
+                      stroke="var(--accent)"
+                      strokeDasharray="4 3"
+                      strokeWidth={1}
+                      label={{ value: `Avg $${fmtPrice(avgPrice)}`, position: 'insideTopRight', fontSize: 10, fill: 'var(--accent)', fontFamily: 'var(--mono)' }}
+                    />
+                  )}
                   {stopLoss !== undefined && (
                     <ReferenceLine
                       y={stopLoss}
