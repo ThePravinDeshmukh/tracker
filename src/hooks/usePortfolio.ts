@@ -14,7 +14,7 @@ function loadFromStorage(): Holding[] {
 
 interface UsePortfolioResult {
   holdings: Holding[];
-  addOrUpdateHolding: (symbol: string, avgPrice: string | number, qty: string | number) => void;
+  addOrUpdateHolding: (symbol: string, avgPrice: string | number, qty: string | number, stopLoss?: string | number) => void;
   addToHolding: (symbol: string, newPrice: number, newQty: number) => void;
   removeHolding: (symbol: string) => void;
 }
@@ -26,10 +26,16 @@ export function usePortfolio(): UsePortfolioResult {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(holdings));
   }, [holdings]);
 
-  const addOrUpdateHolding = (symbol: string, avgPrice: string | number, qty: string | number): void => {
+  const addOrUpdateHolding = (symbol: string, avgPrice: string | number, qty: string | number, stopLoss?: string | number): void => {
     setHoldings(prev => {
       const existingIndex = prev.findIndex(h => h.symbol === symbol);
-      const holding: Holding = { symbol, avgPrice: parseFloat(String(avgPrice)), qty: parseFloat(String(qty)) };
+      const parsedSl = stopLoss !== undefined && stopLoss !== '' ? parseFloat(String(stopLoss)) : NaN;
+      const holding: Holding = {
+        symbol,
+        avgPrice: parseFloat(String(avgPrice)),
+        qty: parseFloat(String(qty)),
+        ...(isFinite(parsedSl) && parsedSl > 0 ? { stopLoss: parsedSl } : {}),
+      };
       if (existingIndex >= 0) {
         const updated = [...prev];
         updated[existingIndex] = holding;
@@ -44,7 +50,7 @@ export function usePortfolio(): UsePortfolioResult {
       if (h.symbol !== symbol) return h;
       const totalQty = h.qty + newQty;
       const newAvgPrice = (h.avgPrice * h.qty + newPrice * newQty) / totalQty;
-      return { symbol, avgPrice: newAvgPrice, qty: totalQty };
+      return { ...h, avgPrice: newAvgPrice, qty: totalQty };
     }));
   };
 

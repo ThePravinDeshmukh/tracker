@@ -189,6 +189,7 @@ export default function App() {
                   <span>Live Price</span>
                   <span>Value</span>
                   <span>P&amp;L</span>
+                  <span>Stop Loss</span>
                   <span></span>
                 </div>
                 {sorted.map(h => (
@@ -246,7 +247,7 @@ export default function App() {
       {showModal && (
         <AddEditModal
           existing={editTarget}
-          onSave={addOrUpdateHolding}
+          onSave={(symbol, avgPrice, qty, stopLoss) => addOrUpdateHolding(symbol, avgPrice, qty, stopLoss)}
           onClose={handleClose}
         />
       )}
@@ -272,6 +273,7 @@ export default function App() {
         <AssetChart
           symbol={chartSymbol}
           avgPrice={holdings.find(h => h.symbol === chartSymbol)?.avgPrice ?? 0}
+          stopLoss={holdings.find(h => h.symbol === chartSymbol)?.stopLoss}
           livePrice={prices[chartSymbol]}
           liveVolume={volumes[chartSymbol]}
           onClose={handleCloseChart}

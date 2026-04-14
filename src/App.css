@@ -347,6 +347,11 @@
 .pnl.neg { color: var(--red); }
 .pct { opacity: 0.75; font-size: 12px; }
 
+.sl-near { color: #f59e0b; }
+.sl-breached { color: var(--red); }
+.sl-distance { font-size: 11px; margin-top: 2px; opacity: 0.85; }
+
+.optional { font-size: 10px; color: var(--muted); font-weight: 400; margin-left: 4px; }
 
 .row-actions {
   display: flex; gap: 6px; justify-content: flex-end;

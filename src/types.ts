@@ -2,6 +2,7 @@ export interface Holding {
   symbol: string;
   avgPrice: number;
   qty: number;
+  stopLoss?: number;
 }
 
 export interface EnrichedHolding extends Holding {
