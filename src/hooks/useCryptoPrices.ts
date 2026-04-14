@@ -23,9 +23,10 @@ interface UseCryptoPricesResult {
   prices: PriceMap;
   prevPrices: PriceMap;
   volumes: VolumeMap;
+  change24h: PriceMap;
 }
 
-type OnTick = (symbol: string, price: number, volume: number) => void;
+type OnTick = (symbol: string, price: number, volume: number, change24hPct: number) => void;
 
 function openTickerStream(
   url: string,
@@ -41,7 +42,8 @@ function openTickerStream(
       const symbol = (data.s as string).replace(/USDT$/, '');
       const price = parseFloat(data.c as string);
       const volume = parseFloat(data.q as string); // 24h quote asset volume in USDT
-      onTick(symbol, price, volume);
+      const change24hPct = parseFloat(data.P as string); // 24h price change percent
+      onTick(symbol, price, volume, change24hPct);
     } catch {}
   };
   ws.onerror = onError;
@@ -72,6 +74,7 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
   const [prices, setPrices] = useState<PriceMap>({});
   const [prevPrices, setPrevPrices] = useState<PriceMap>({});
   const [volumes, setVolumes] = useState<VolumeMap>({});
+  const [change24h, setChange24h] = useState<PriceMap>({});
   const { spotSymbols: availableSpot, futuresSymbols: availableFutures } = useAvailablePairs();
 
   // Determine which portfolio symbols are futures-only.
@@ -89,12 +92,13 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
     [futuresOnlySet]
   );
 
-  const applyTick = (symbol: string, price: number, volume: number): void => {
+  const applyTick = (symbol: string, price: number, volume: number, change24hPct: number): void => {
     setPrices(prev => {
       setPrevPrices(pp => ({ ...pp, [symbol]: prev[symbol] }));
       return { ...prev, [symbol]: price };
     });
     if (!isNaN(volume)) setVolumes(prev => ({ ...prev, [symbol]: volume }));
+    if (!isNaN(change24hPct)) setChange24h(prev => ({ ...prev, [symbol]: change24hPct }));
   };
 
   useEffect(() => {
@@ -184,7 +188,7 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
     };
   }, [symbols.join(','), futuresKey]); // eslint-disable-line
 
-  return { prices, prevPrices, volumes };
+  return { prices, prevPrices, volumes, change24h };
 }
 
 export function getCoinIcon(symbol: string): string {
