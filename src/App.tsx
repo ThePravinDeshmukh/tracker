@@ -149,27 +149,6 @@ export default function App() {
                 <span className="tab-count">{watchlist.length}</span>
               )}
             </button>
-
-            {/* Controls pinned to the right — tab-dependent */}
-            <div className="tab-controls">
-              {activeTab === 'holdings' && (
-                <>
-                  <select
-                    className="sort-select"
-                    value={sortBy}
-                    onChange={e => setSortBy(e.target.value as SortKey)}
-                  >
-                    <option value="value">Sort: Value</option>
-                    <option value="pnl">Sort: P&L $</option>
-                    <option value="pnlpct">Sort: P&L %</option>
-                    <option value="name">Sort: Name</option>
-                  </select>
-                  <button className="btn primary" onClick={() => setShowModal(true)}>
-                    + Add Coin
-                  </button>
-                </>
-              )}
-            </div>
           </div>
 
           {/* Holdings tab */}
@@ -183,6 +162,21 @@ export default function App() {
               </div>
             ) : (
               <div className="holdings-list">
+                <div className="holdings-toolbar">
+                  <select
+                    className="sort-select"
+                    value={sortBy}
+                    onChange={e => setSortBy(e.target.value as SortKey)}
+                  >
+                    <option value="value">Sort: Value</option>
+                    <option value="pnl">Sort: P&L $</option>
+                    <option value="pnlpct">Sort: P&L %</option>
+                    <option value="name">Sort: Name</option>
+                  </select>
+                  <button className="btn primary" onClick={() => setShowModal(true)}>
+                    + Add Coin
+                  </button>
+                </div>
                 <div className="list-header">
                   <span>Asset</span>
                   <span>Avg Price</span>
