@@ -1,7 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PriceMap } from '../types';
+import { PriceMap, WatchlistSortKey } from '../types';
 import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
 import { useAvailablePairs } from '../hooks/useAvailablePairs';
+
+function sortWatchlist(symbols: string[], sortBy: WatchlistSortKey, prices: PriceMap, change24h: PriceMap): string[] {
+  return [...symbols].sort((a, b) => {
+    if (sortBy === 'price') return (prices[b] ?? 0) - (prices[a] ?? 0);
+    if (sortBy === 'change') return (change24h[b] ?? 0) - (change24h[a] ?? 0);
+    return a.localeCompare(b);
+  });
+}
 
 interface Props {
   watchlist: string[];
@@ -30,10 +38,11 @@ const POPULAR_COINS = [
 export default function WatchlistPanel({ watchlist, prices, prevPrices, change24h, onAdd, onRemove, onViewChart }: Props) {
   const [search, setSearch] = useState('');
   const [showInput, setShowInput] = useState(false);
+  const [sortBy, setSortBy] = useState<WatchlistSortKey>('name');
   const inputRef = useRef<HTMLInputElement>(null);
   const { allSymbols, loading } = useAvailablePairs();
 
-  const sorted = [...watchlist].sort((a, b) => a.localeCompare(b));
+  const sorted = sortWatchlist(watchlist, sortBy, prices, change24h);
 
   // Use API symbols when loaded, fall back to popular coins
   const symbolPool = allSymbols.length > 0 ? allSymbols : POPULAR_COINS;
@@ -111,6 +120,15 @@ export default function WatchlistPanel({ watchlist, prices, prevPrices, change24
         </>
       ) : (
         <div className="watchlist-add-row">
+          <select
+            className="sort-select"
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value as WatchlistSortKey)}
+          >
+            <option value="name">Sort: Name</option>
+            <option value="price">Sort: Price</option>
+            <option value="change">Sort: 24h Change</option>
+          </select>
           <button className="btn primary" onClick={() => setShowInput(true)}>+ Add Coin</button>
         </div>
       )}
