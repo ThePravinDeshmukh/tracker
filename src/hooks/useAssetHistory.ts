@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { VolumePoint } from '../types';
+import { useAvailablePairs } from './useAvailablePairs';
 
 export type TimeframeKey = '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d';
 
@@ -25,16 +26,17 @@ const TIMEFRAME_LIMITS: Record<TimeframeKey, number> = {
   '1d': 90,
 };
 
-const FUTURES_SYMBOLS = new Set(['DUSK', 'HANA']);
+// Fallback used before dynamic pair data has loaded
+const FALLBACK_FUTURES_SYMBOLS = new Set(['DUSK', 'HANA']);
 
 // k[0]=openTime, k[1]=open, k[2]=high, k[3]=low, k[4]=close,
 // k[5]=baseVol, k[6]=closeTime, k[7]=quoteVol (USDT)
 type RawKline = [number, string, string, string, string, string, number, string, ...unknown[]];
 
-function getBinanceKlineUrl(symbol: string, interval: TimeframeKey): string {
+function getBinanceKlineUrl(symbol: string, interval: TimeframeKey, isFutures: boolean): string {
   const pair = `${symbol}USDT`;
   const limit = TIMEFRAME_LIMITS[interval];
-  if (FUTURES_SYMBOLS.has(symbol)) {
+  if (isFutures) {
     return `https://fapi.binance.com/fapi/v1/klines?symbol=${pair}&interval=${interval}&limit=${limit}`;
   }
   return `https://api.binance.com/api/v3/klines?symbol=${pair}&interval=${interval}&limit=${limit}`;
@@ -59,9 +61,25 @@ export function useAssetHistory(symbol: string | null, interval: TimeframeKey): 
   const [volumeHistory, setVolumeHistory] = useState<VolumePoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { spotSymbols, futuresSymbols, loading: pairsLoading } = useAvailablePairs();
+
+  const isFutures = useMemo(() => {
+    if (!symbol) return false;
+    if (spotSymbols.length === 0 && futuresSymbols.length === 0) {
+      return FALLBACK_FUTURES_SYMBOLS.has(symbol);
+    }
+    const spotSet = new Set(spotSymbols);
+    const futuresSet = new Set(futuresSymbols);
+    return !spotSet.has(symbol) && futuresSet.has(symbol);
+  }, [symbol, spotSymbols, futuresSymbols]);
 
   useEffect(() => {
     if (!symbol) return;
+    if (pairsLoading) {
+      setLoading(true);
+      setError(null);
+      return;
+    }
 
     let cancelled = false;
     setLoading(true);
@@ -69,7 +87,7 @@ export function useAssetHistory(symbol: string | null, interval: TimeframeKey): 
     setData([]);
     setVolumeHistory([]);
 
-    fetch(getBinanceKlineUrl(symbol, interval))
+    fetch(getBinanceKlineUrl(symbol, interval, isFutures))
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json() as Promise<RawKline[]>;
@@ -90,7 +108,7 @@ export function useAssetHistory(symbol: string | null, interval: TimeframeKey): 
       });
 
     return () => { cancelled = true; };
-  }, [symbol, interval]);
+  }, [symbol, interval, isFutures, pairsLoading]);
 
   return { data, volumeHistory, loading, error };
 }
