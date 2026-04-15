@@ -23,6 +23,7 @@ export interface VolumePoint {
 }
 
 export type SortKey = 'value' | 'pnl' | 'pnlpct' | 'name';
+export type WatchlistSortKey = 'name' | 'price' | 'change';
 
 export interface WatcherSignal {
   symbol: string;
