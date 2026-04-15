@@ -162,7 +162,7 @@
 }
 .watchlist-header {
   display: grid;
-  grid-template-columns: 200px 1fr 1fr 40px 40px;
+  grid-template-columns: 200px 1fr 1fr 40px;
   gap: 8px;
   padding: 8px 24px;
   font-family: var(--mono);
@@ -176,7 +176,7 @@
 }
 .watchlist-row {
   display: grid;
-  grid-template-columns: 200px 1fr 1fr 40px 40px;
+  grid-template-columns: 200px 1fr 1fr 40px;
   gap: 8px;
   padding: 12px 24px;
   align-items: center;
@@ -190,6 +190,18 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+.watchlist-asset-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 6px;
+  text-align: left;
+}
+.watchlist-asset-btn:hover .watchlist-symbol {
+  color: var(--accent);
+  text-decoration: underline;
 }
 .watchlist-coin-icon {
   width: 28px; height: 28px;
@@ -280,13 +292,13 @@
 
 @media (max-width: 900px) {
   .watchlist-header { display: none; }
-  .watchlist-row { grid-template-columns: 1fr 1fr 40px 40px; }
+  .watchlist-row { grid-template-columns: 1fr 1fr 40px; }
   .watchlist-row > .watchlist-asset { grid-column: 1 / -1; padding-bottom: 4px; }
 }
 @media (max-width: 560px) {
   .tab-btn { padding: 12px 10px; font-size: 13px; }
   .watchlist-add-row, .watchlist-add-bar { padding: 12px 16px; }
-  .watchlist-row { padding: 10px 16px; grid-template-columns: 1fr 1fr 36px 36px; }
+  .watchlist-row { padding: 10px 16px; grid-template-columns: 1fr 1fr 40px; }
   .watchlist-suggestion { padding: 9px 16px; }
 }
 

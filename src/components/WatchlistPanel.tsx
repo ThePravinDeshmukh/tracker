@@ -123,7 +123,6 @@ export default function WatchlistPanel({ watchlist, prices, prevPrices, change24
             <span>Live Price</span>
             <span>24h Change</span>
             <span></span>
-            <span></span>
           </div>
           {sorted.map(symbol => {
             const price     = prices[symbol];
@@ -135,10 +134,14 @@ export default function WatchlistPanel({ watchlist, prices, prevPrices, change24
 
             return (
               <div key={symbol} className="watchlist-row">
-                <div className="watchlist-asset">
+                <button
+                  className="watchlist-asset watchlist-asset-btn"
+                  onClick={() => onViewChart(symbol)}
+                  title={`View ${symbol} chart`}
+                >
                   <span className="watchlist-coin-icon" style={{ background: color }}>{icon}</span>
                   <span className="watchlist-symbol">{symbol}</span>
-                </div>
+                </button>
                 <span className={`watchlist-price mono ${priceDir}`}>
                   {price !== undefined ? `$${fmtPrice(price)}` : '—'}
                 </span>
@@ -147,13 +150,6 @@ export default function WatchlistPanel({ watchlist, prices, prevPrices, change24
                     ? `${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%`
                     : '—'}
                 </span>
-                <button
-                  className="btn-icon chart"
-                  onClick={() => onViewChart(symbol)}
-                  title={`View ${symbol} chart`}
-                >
-                  ▲
-                </button>
                 <button
                   className="btn-icon del"
                   onClick={() => onRemove(symbol)}
