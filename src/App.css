@@ -157,7 +157,7 @@
 }
 .watchlist-header {
   display: grid;
-  grid-template-columns: 200px 1fr 1fr 40px;
+  grid-template-columns: 200px 1fr 1fr 1fr 40px;
   gap: 8px;
   padding: 8px 24px;
   font-family: var(--mono);
@@ -171,7 +171,7 @@
 }
 .watchlist-row {
   display: grid;
-  grid-template-columns: 200px 1fr 1fr 40px;
+  grid-template-columns: 200px 1fr 1fr 1fr 40px;
   gap: 8px;
   padding: 12px 24px;
   align-items: center;
@@ -214,6 +214,9 @@
 }
 .watchlist-price  { font-size: 13px; color: var(--text); }
 .watchlist-change { font-size: 12px; }
+.watchlist-change.pos { color: var(--green); }
+.watchlist-change.neg { color: var(--red); }
+.watchlist-volume { font-size: 12px; }
 
 /* ── Watchlist add-bar + inline suggestions ── */
 .watchlist-add-bar {
@@ -289,6 +292,7 @@
   .watchlist-header { display: none; }
   .watchlist-row { grid-template-columns: 1fr 1fr 40px; }
   .watchlist-row > .watchlist-asset { grid-column: 1 / -1; padding-bottom: 4px; }
+  .watchlist-volume { display: none; }
 }
 @media (max-width: 560px) {
   .tab-btn { padding: 12px 10px; font-size: 13px; }
@@ -1196,62 +1200,6 @@
 .stress-price  { font-size: 11px; }
 .stress-time   { font-size: 10px; }
 
-/* ── Correlation Card ───────────────────────────────────────────────────────── */
-.correlation-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 6px;
-}
-.correlation-lookback {
-  font-size: 10px;
-  font-family: var(--mono);
-  margin-bottom: 12px;
-}
-.correlation-empty,
-.correlation-empty-msg {
-  font-size: 12px;
-  font-family: var(--mono);
-  text-align: center;
-  padding: 20px 0;
-}
-.correlation-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 280px;
-  overflow-y: auto;
-}
-.correlation-row {
-  display: grid;
-  grid-template-columns: 22px 52px 1fr 48px;
-  gap: 8px;
-  align-items: center;
-  font-size: 12px;
-}
-.corr-coin-icon {
-  width: 22px; height: 22px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 700;
-  color: #fff;
-  flex-shrink: 0;
-}
-.corr-symbol { font-family: var(--mono); font-size: 11px; color: var(--text); }
-.corr-bar-wrap {
-  height: 4px;
-  background: var(--border);
-  border-radius: 2px;
-  overflow: hidden;
-}
-.corr-bar {
-  height: 100%;
-  border-radius: 2px;
-  transition: width 0.3s ease;
-}
-.corr-bar--pos { background: var(--accent); }
-.corr-bar--neg { background: var(--accent2); }
-.corr-value { font-size: 11px; text-align: right; }
 
 /* ── Network Console Panel ────────────────────────────────────────────────── */
 

@@ -2,13 +2,12 @@ import { useState, useEffect, useMemo } from 'react';
 import { PriceMap, VolumeMap } from '../types';
 import { useAvailablePairs } from './useAvailablePairs';
 
-// Fallback set used before dynamic pair data has loaded
-const FALLBACK_FUTURES_ONLY = new Set<string>(['DUSK', 'HANA']);
-
 const SPOT_WS_URL = 'wss://stream.binance.com:9443/stream';
 const FUTURES_WS_URL = 'wss://fstream.binance.com/stream';
 const SPOT_REST_URL = 'https://api.binance.com/api/v3/ticker/price';
 const FUTURES_REST_URL = 'https://fapi.binance.com/fapi/v1/ticker/price';
+const SPOT_TICKER24_URL = 'https://api.binance.com/api/v3/ticker/24hr';
+const FUTURES_TICKER24_URL = 'https://fapi.binance.com/fapi/v1/ticker/24hr';
 
 function toUsdtPair(symbol: string): string {
   return `${symbol.toUpperCase()}USDT`;
@@ -51,22 +50,27 @@ function openTickerStream(
   return ws;
 }
 
-async function fetchPricesFallback(
+interface Ticker24h { lastPrice: string; quoteVolume: string; priceChangePercent: string; }
+
+async function fetchTicker24h(
   symbols: string[],
   baseUrl: string,
-  setPrices: React.Dispatch<React.SetStateAction<PriceMap>>
+  applyTick: OnTick,
 ): Promise<void> {
   try {
-    const results = await Promise.all(
+    await Promise.all(
       symbols.map(async symbol => {
         const res = await fetch(`${baseUrl}?symbol=${toUsdtPair(symbol)}`);
-        const data = await res.json() as { price: string };
-        return { symbol, price: parseFloat(data.price) };
+        if (!res.ok) return;
+        const data = await res.json() as Ticker24h;
+        applyTick(
+          symbol,
+          parseFloat(data.lastPrice),
+          parseFloat(data.quoteVolume),
+          parseFloat(data.priceChangePercent),
+        );
       })
     );
-    const priceMap: PriceMap = {};
-    results.forEach(r => { priceMap[r.symbol] = r.price; });
-    setPrices(prev => ({ ...prev, ...priceMap }));
   } catch {}
 }
 
@@ -75,21 +79,15 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
   const [prevPrices, setPrevPrices] = useState<PriceMap>({});
   const [volumes, setVolumes] = useState<VolumeMap>({});
   const [change24h, setChange24h] = useState<PriceMap>({});
-  const { spotSymbols: availableSpot, futuresSymbols: availableFutures } = useAvailablePairs();
+  const { spotSymbols: availableSpot, futuresSymbols: availableFutures } = useAvailablePairs(
+    useMemo(() => symbols.map(s => s.toUpperCase()), [symbols.join(',')])  // eslint-disable-line
+  );
 
-  // Determine which portfolio symbols are futures-only.
-  // Before dynamic data arrives, fall back to a small hardcoded set.
-  const futuresOnlySet = useMemo(() => {
-    if (availableSpot.length === 0 && availableFutures.length === 0) {
-      return FALLBACK_FUTURES_ONLY;
-    }
-    const spotSet = new Set(availableSpot);
-    return new Set(availableFutures.filter(s => !spotSet.has(s)));
-  }, [availableSpot, availableFutures]);
+  const futuresOnlySet = useMemo(() => new Set(availableFutures), [availableFutures]);
 
   const futuresKey = useMemo(
-    () => Array.from(futuresOnlySet).sort().join(','),
-    [futuresOnlySet]
+    () => availableFutures.slice().sort().join(','),
+    [availableFutures]
   );
 
   const applyTick = (symbol: string, price: number, volume: number, change24hPct: number): void => {
@@ -127,12 +125,12 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
         ? buildStreamUrl(SPOT_WS_URL, spotPairs)
         : buildStreamUrl(FUTURES_WS_URL, futuresPairs);
       const syms = index === 0 ? spotSymbols : futuresSymbols;
-      const rest = index === 0 ? SPOT_REST_URL : FUTURES_REST_URL;
+      const rest24 = index === 0 ? SPOT_TICKER24_URL : FUTURES_TICKER24_URL;
 
       const ws = openTickerStream(
         url,
         applyTick,
-        () => fetchPricesFallback(syms, rest, setPrices),
+        () => void fetchTicker24h(syms, rest24, applyTick),
         (event: CloseEvent) => {
           wsRefs[index].current = null;
           if (deliberatelyClosed || event.wasClean) return;
@@ -145,6 +143,10 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
       wsRefs[index].current = ws;
     }
 
+    // Fetch prices immediately via REST so the UI is populated before the first WS tick
+    if (spotSymbols.length > 0)    void fetchTicker24h(spotSymbols, SPOT_TICKER24_URL, applyTick);
+    if (futuresSymbols.length > 0) void fetchTicker24h(futuresSymbols, FUTURES_TICKER24_URL, applyTick);
+
     if (spotSymbols.length > 0)    connect(0);
     if (futuresSymbols.length > 0) connect(1);
 
@@ -153,9 +155,9 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
 
       // Serve fresh prices via REST immediately while new socket handshake completes
       if (spotSymbols.length > 0)
-        void fetchPricesFallback(spotSymbols, SPOT_REST_URL, setPrices);
+        void fetchTicker24h(spotSymbols, SPOT_TICKER24_URL, applyTick);
       if (futuresSymbols.length > 0)
-        void fetchPricesFallback(futuresSymbols, FUTURES_REST_URL, setPrices);
+        void fetchTicker24h(futuresSymbols, FUTURES_TICKER24_URL, applyTick);
 
       // Reconnect any dead sockets
       for (const index of [0, 1] as const) {
