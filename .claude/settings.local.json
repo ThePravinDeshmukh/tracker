@@ -5,7 +5,8 @@
       "Bash(mkdir -p ssl)",
       "Bash(node -e \":*)",
       "Bash(openssl req:*)",
-      "Bash(node generate-icons.js)"
+      "Bash(node generate-icons.js)",
+      "Bash(npx tsc *)"
     ]
   }
 }

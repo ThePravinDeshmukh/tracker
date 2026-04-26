@@ -3,9 +3,10 @@ import { PriceMap, WatchlistSortKey } from '../types';
 import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
 import { useAvailablePairs } from '../hooks/useAvailablePairs';
 
-function sortWatchlist(symbols: string[], sortBy: WatchlistSortKey, prices: PriceMap, change24h: PriceMap): string[] {
+function sortWatchlist(symbols: string[], sortBy: WatchlistSortKey, prices: PriceMap, change24h: PriceMap, volumes: PriceMap): string[] {
   return [...symbols].sort((a, b) => {
-    if (sortBy === 'price') return (prices[b] ?? 0) - (prices[a] ?? 0);
+    if (sortBy === 'volume') return (volumes[b] ?? 0) - (volumes[a] ?? 0);
+    if (sortBy === 'price')  return (prices[b] ?? 0) - (prices[a] ?? 0);
     if (sortBy === 'change') return (change24h[b] ?? 0) - (change24h[a] ?? 0);
     return a.localeCompare(b);
   });
@@ -16,9 +17,18 @@ interface Props {
   prices: PriceMap;
   prevPrices: PriceMap;
   change24h: PriceMap;
+  volumes: PriceMap;
   onAdd: (symbol: string) => void;
   onRemove: (symbol: string) => void;
   onViewChart: (symbol: string) => void;
+}
+
+function fmtVolume(vol: number | undefined): string {
+  if (vol === undefined || isNaN(vol)) return '—';
+  if (vol >= 1_000_000_000) return `$${(vol / 1_000_000_000).toFixed(2)}B`;
+  if (vol >= 1_000_000)     return `$${(vol / 1_000_000).toFixed(2)}M`;
+  if (vol >= 1_000)         return `$${(vol / 1_000).toFixed(1)}K`;
+  return `$${vol.toFixed(0)}`;
 }
 
 function fmtPrice(price: number | undefined): string {
@@ -35,14 +45,14 @@ const POPULAR_COINS = [
   'TRX','TON','HBAR','SHIB','FET','WIF','TIA','JUP','RENDER','SEI',
 ];
 
-export default function WatchlistPanel({ watchlist, prices, prevPrices, change24h, onAdd, onRemove, onViewChart }: Props) {
+export default function WatchlistPanel({ watchlist, prices, prevPrices, change24h, volumes, onAdd, onRemove, onViewChart }: Props) {
   const [search, setSearch] = useState('');
   const [showInput, setShowInput] = useState(false);
-  const [sortBy, setSortBy] = useState<WatchlistSortKey>('name');
+  const [sortBy, setSortBy] = useState<WatchlistSortKey>('volume');
   const inputRef = useRef<HTMLInputElement>(null);
   const { allSymbols, loading } = useAvailablePairs();
 
-  const sorted = sortWatchlist(watchlist, sortBy, prices, change24h);
+  const sorted = sortWatchlist(watchlist, sortBy, prices, change24h, volumes);
 
   // Use API symbols when loaded, fall back to popular coins
   const symbolPool = allSymbols.length > 0 ? allSymbols : POPULAR_COINS;
@@ -125,6 +135,7 @@ export default function WatchlistPanel({ watchlist, prices, prevPrices, change24
             value={sortBy}
             onChange={e => setSortBy(e.target.value as WatchlistSortKey)}
           >
+            <option value="volume">Sort: Volume</option>
             <option value="name">Sort: Name</option>
             <option value="price">Sort: Price</option>
             <option value="change">Sort: 24h Change</option>
@@ -140,6 +151,7 @@ export default function WatchlistPanel({ watchlist, prices, prevPrices, change24
             <span>Asset</span>
             <span>Live Price</span>
             <span>24h Change</span>
+            <span>24h Volume</span>
             <span></span>
           </div>
           {sorted.map(symbol => {
@@ -167,6 +179,9 @@ export default function WatchlistPanel({ watchlist, prices, prevPrices, change24
                   {hasChange
                     ? `${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%`
                     : '—'}
+                </span>
+                <span className="watchlist-volume mono muted">
+                  {fmtVolume(volumes[symbol])}
                 </span>
                 <button
                   className="btn-icon del"

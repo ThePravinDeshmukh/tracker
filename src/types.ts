@@ -23,7 +23,7 @@ export interface VolumePoint {
 }
 
 export type SortKey = 'value' | 'pnl' | 'pnlpct' | 'name';
-export type WatchlistSortKey = 'name' | 'price' | 'change';
+export type WatchlistSortKey = 'name' | 'price' | 'change' | 'volume';
 
 export interface WatcherSignal {
   symbol: string;
@@ -56,11 +56,6 @@ export interface StressEvent {
   price: number;
   ret1m: number;          // signed % that triggered the event
   triggeredAt: number;    // unix ms
-}
-
-export interface CorrelationResult {
-  symbol: string;
-  correlation: number;    // Pearson, –1 to +1
 }
 
 // --- Network Console ---

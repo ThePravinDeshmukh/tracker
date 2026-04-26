@@ -15,7 +15,6 @@ import { useMomentum } from './hooks/useMomentum';
 import MarketPulseSidebar from './components/MarketPulseSidebar';
 import { useNetworkLog } from './hooks/useNetworkLog';
 import NetworkConsolePanel from './components/NetworkConsolePanel';
-
 type ActiveTab = 'holdings' | 'watchlist';
 
 function fmt(n: number | undefined, decimals = 2): string {
@@ -53,14 +52,13 @@ export default function App() {
   const [addToTarget, setAddToTarget] = useState<Holding | null>(null);
   const [pulseOpen, setPulseOpen] = useState(false);
 
-  // Merge portfolio + watchlist so prices and momentum cover both
   const allSymbols = useMemo(
     () => Array.from(new Set([...holdings.map(h => h.symbol), ...watchlist])),
     [holdings, watchlist]
   );
 
   const { prices, prevPrices, volumes, change24h } = useCryptoPrices(allSymbols);
-  const { momentumRows, stressEvents, computeCorrelations } = useMomentum(allSymbols, prices);
+  const { momentumRows, stressEvents } = useMomentum(allSymbols, prices);
   const { entries: netEntries, clearEntries } = useNetworkLog();
 
   const enriched = useMemo(
@@ -210,11 +208,13 @@ export default function App() {
               prices={prices}
               prevPrices={prevPrices}
               change24h={change24h}
+              volumes={volumes}
               onAdd={addToWatchlist}
               onRemove={removeFromWatchlist}
               onViewChart={handleViewChart}
             />
           )}
+
         </div>
       </main>
 
@@ -236,8 +236,6 @@ export default function App() {
         onClose={() => setPulseOpen(false)}
         rows={momentumRows}
         stressEvents={stressEvents}
-        computeCorrelations={computeCorrelations}
-        symbols={allSymbols}
       />
 
       {showModal && (

@@ -1,5 +1,5 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
-import { PriceMap, MomentumRow, StressEvent, CorrelationResult, Regime } from '../types';
+import { useRef, useState, useEffect } from 'react';
+import { PriceMap, MomentumRow, StressEvent, Regime } from '../types';
 
 // ── Constants (Market Pulse spec) ─────────────────────────────────────────────
 const HISTORY_WINDOW_MS   = 60 * 60 * 1_000;  // keep 60 min of history
@@ -12,9 +12,6 @@ const REGIME_HISTORY_SIZE = 60;               // max vol15m readings per symbol
 const STRESS_THRESHOLD    = 1.5;              // % — crypto-wide band
 const STRESS_COOLDOWN_MS  = 60 * 1_000;       // 60 s per-symbol cooldown
 const MAX_STRESS_EVENTS   = 20;
-const CORR_LOOKBACK_HIGH  = 15 * 60 * 1_000;  // high_vol regime lookback
-const CORR_LOOKBACK_NORM  = 60 * 60 * 1_000;  // normal regime lookback
-const CORR_BUCKET_MS      = 60 * 1_000;        // 1-min price buckets for correlation
 
 // ── Internal types ─────────────────────────────────────────────────────────────
 interface PricePoint {
@@ -105,32 +102,11 @@ function classifyRegime(vol15m: number | null, volHistory: number[]): Regime {
   return vol15m >= threshold ? 'high_vol' : 'normal';
 }
 
-/** Pearson correlation between two equal-length arrays. */
-function pearson(xs: number[], ys: number[]): number {
-  if (xs.length !== ys.length || xs.length < 2) return 0;
-  const n = xs.length;
-  const meanX = xs.reduce((s, v) => s + v, 0) / n;
-  const meanY = ys.reduce((s, v) => s + v, 0) / n;
-  let num = 0;
-  let denomX = 0;
-  let denomY = 0;
-  for (let i = 0; i < n; i++) {
-    const dx = xs[i] - meanX;
-    const dy = ys[i] - meanY;
-    num += dx * dy;
-    denomX += dx * dx;
-    denomY += dy * dy;
-  }
-  const denom = Math.sqrt(denomX * denomY);
-  return denom === 0 ? 0 : num / denom;
-}
-
 // ── Hook ───────────────────────────────────────────────────────────────────────
 
 interface UseMomentumResult {
   momentumRows: MomentumRow[];
   stressEvents: StressEvent[];
-  computeCorrelations: (baseSymbol: string) => CorrelationResult[];
 }
 
 export function useMomentum(symbols: string[], prices: PriceMap): UseMomentumResult {
@@ -231,45 +207,5 @@ export function useMomentum(symbols: string[], prices: PriceMap): UseMomentumRes
     }
   }, [prices]); // prices is the only external input that drives history accumulation
 
-  const computeCorrelations = useCallback((baseSymbol: string): CorrelationResult[] => {
-    const priceHistory = priceHistoryRef.current;
-    const baseHistory = priceHistory.get(baseSymbol);
-    if (!baseHistory || baseHistory.length < 2) return [];
-
-    // Determine lookback based on base symbol's regime
-    const volHist = vol15mHistoryRef.current.get(baseSymbol) ?? [];
-    const now = Date.now();
-    const latestVol = computeVol15m(baseHistory, now);
-    const regime = classifyRegime(latestVol, volHist);
-    const lookbackMs = regime === 'high_vol' ? CORR_LOOKBACK_HIGH : CORR_LOOKBACK_NORM;
-    const startTime = now - lookbackMs;
-
-    const baseBuckets = bucketByMinute(baseHistory, startTime, now, CORR_BUCKET_MS);
-    const baseTimes = Array.from(baseBuckets.keys()).sort((a, b) => a - b);
-    if (baseTimes.length < 2) return [];
-
-    const results: CorrelationResult[] = [];
-
-    for (const symbol of Array.from(priceHistory.keys())) {
-      if (symbol === baseSymbol) continue;
-      const otherHistory = priceHistory.get(symbol);
-      if (!otherHistory || otherHistory.length < 2) continue;
-
-      const otherBuckets = bucketByMinute(otherHistory, startTime, now, CORR_BUCKET_MS);
-
-      // Find time keys present in both
-      const sharedTimes = baseTimes.filter(t => otherBuckets.has(t));
-      if (sharedTimes.length < 3) continue;
-
-      const baseValues = sharedTimes.map(t => baseBuckets.get(t)!);
-      const otherValues = sharedTimes.map(t => otherBuckets.get(t)!);
-
-      const correlation = pearson(baseValues, otherValues);
-      results.push({ symbol, correlation });
-    }
-
-    return results.sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation));
-  }, []); // no deps — reads only refs
-
-  return { momentumRows, stressEvents, computeCorrelations };
+  return { momentumRows, stressEvents };
 }

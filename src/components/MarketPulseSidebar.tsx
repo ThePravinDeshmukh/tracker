@@ -1,16 +1,13 @@
 import React from 'react';
-import { MomentumRow, StressEvent, CorrelationResult } from '../types';
+import { MomentumRow, StressEvent } from '../types';
 import PulseTable from './PulseTable';
 import StressFeed from './StressFeed';
-import CorrelationCard from './CorrelationCard';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   rows: MomentumRow[];
   stressEvents: StressEvent[];
-  computeCorrelations: (base: string) => CorrelationResult[];
-  symbols: string[];
 }
 
 export default function MarketPulseSidebar({
@@ -18,8 +15,6 @@ export default function MarketPulseSidebar({
   onClose,
   rows,
   stressEvents,
-  computeCorrelations,
-  symbols,
 }: Props) {
   return (
     <>
@@ -52,15 +47,6 @@ export default function MarketPulseSidebar({
             <StressFeed events={stressEvents} />
           </div>
 
-          {/* Correlation */}
-          <div className="watcher-section">
-            <div className="watcher-section-label">Correlation</div>
-            <CorrelationCard
-              symbols={symbols}
-              momentumRows={rows}
-              computeCorrelations={computeCorrelations}
-            />
-          </div>
         </div>
       </div>
     </>
