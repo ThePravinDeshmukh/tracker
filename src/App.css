@@ -405,6 +405,18 @@
 .btn-icon.edit:hover { color: var(--accent); background: rgba(124, 109, 250, 0.1); }
 .btn-icon.close-trade:hover { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
 .btn-icon.del:hover { color: var(--red); background: rgba(250, 82, 82, 0.1); }
+.btn-icon.sell:hover { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+
+.btn.sell-confirm { background: #f59e0b; color: #000; font-weight: 700; }
+.btn.sell-confirm:hover { background: #fbbf24; transform: translateY(-1px); }
+
+.sell-all-link {
+  background: none; border: none; padding: 0;
+  font-size: 11px; color: var(--accent); cursor: pointer;
+  margin-left: 8px; text-decoration: underline;
+  font-family: inherit;
+}
+.sell-all-link:hover { color: var(--text); }
 .btn-icon.chart:hover { color: var(--accent); background: rgba(124, 109, 250, 0.1); }
 
 .btn.danger {
