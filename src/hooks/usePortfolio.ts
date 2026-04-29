@@ -16,6 +16,7 @@ interface UsePortfolioResult {
   holdings: Holding[];
   addOrUpdateHolding: (symbol: string, avgPrice: string | number, qty: string | number, stopLoss?: string | number) => void;
   addToHolding: (symbol: string, newPrice: number, newQty: number) => void;
+  sellFromHolding: (symbol: string, sellQty: number) => void;
   removeHolding: (symbol: string) => void;
 }
 
@@ -54,9 +55,18 @@ export function usePortfolio(): UsePortfolioResult {
     }));
   };
 
+  const sellFromHolding = (symbol: string, sellQty: number): void => {
+    setHoldings(prev => prev.reduce<Holding[]>((acc, h) => {
+      if (h.symbol !== symbol) return [...acc, h];
+      const remainingQty = h.qty - sellQty;
+      if (remainingQty <= 0) return acc;
+      return [...acc, { ...h, qty: remainingQty }];
+    }, []));
+  };
+
   const removeHolding = (symbol: string): void => {
     setHoldings(prev => prev.filter(h => h.symbol !== symbol));
   };
 
-  return { holdings, addOrUpdateHolding, addToHolding, removeHolding };
+  return { holdings, addOrUpdateHolding, addToHolding, sellFromHolding, removeHolding };
 }

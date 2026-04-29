@@ -11,6 +11,7 @@ import InstallPrompt from './components/InstallPrompt';
 import AssetChart from './components/AssetChart';
 import CloseTradeModal from './components/CloseTradeModal';
 import AddToPositionModal from './components/AddToPositionModal';
+import SellModal from './components/SellModal';
 import { useMomentum } from './hooks/useMomentum';
 import MarketPulseSidebar from './components/MarketPulseSidebar';
 import { useNetworkLog } from './hooks/useNetworkLog';
@@ -40,7 +41,7 @@ function sortHoldings(holdings: EnrichedHolding[], sortBy: SortKey): EnrichedHol
 }
 
 export default function App() {
-  const { holdings, addOrUpdateHolding, addToHolding, removeHolding } = usePortfolio();
+  const { holdings, addOrUpdateHolding, addToHolding, sellFromHolding, removeHolding } = usePortfolio();
   const { watchlist, addToWatchlist, removeFromWatchlist } = useWatchlist();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('holdings');
@@ -50,6 +51,7 @@ export default function App() {
   const [chartSymbol, setChartSymbol] = useState<string | null>(null);
   const [closeTradeTarget, setCloseTradeTarget] = useState<Holding | null>(null);
   const [addToTarget, setAddToTarget] = useState<Holding | null>(null);
+  const [sellTarget, setSellTarget] = useState<Holding | null>(null);
   const [pulseOpen, setPulseOpen] = useState(false);
 
   const allSymbols = useMemo(
@@ -84,6 +86,8 @@ export default function App() {
   const handleCloseTradeModal = (): void => setCloseTradeTarget(null);
   const handleAddTo = (holding: Holding): void => setAddToTarget(holding);
   const handleCloseAddTo = (): void => setAddToTarget(null);
+  const handleSell = (holding: Holding): void => setSellTarget(holding);
+  const handleCloseSell = (): void => setSellTarget(null);
 
   return (
     <div className="app">
@@ -195,6 +199,7 @@ export default function App() {
                     onViewChart={handleViewChart}
                     onCloseTrade={handleOpenCloseTrade}
                     onAddTo={handleAddTo}
+                    onSell={handleSell}
                   />
                 ))}
               </div>
@@ -260,6 +265,15 @@ export default function App() {
           holding={addToTarget}
           onConfirm={(newPrice, newQty) => addToHolding(addToTarget.symbol, newPrice, newQty)}
           onClose={handleCloseAddTo}
+        />
+      )}
+
+      {sellTarget && (
+        <SellModal
+          holding={sellTarget}
+          livePrice={prices[sellTarget.symbol]}
+          onConfirm={(sellQty) => sellFromHolding(sellTarget.symbol, sellQty)}
+          onClose={handleCloseSell}
         />
       )}
 

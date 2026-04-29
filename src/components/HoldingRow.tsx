@@ -13,6 +13,7 @@ interface Props {
   onViewChart: (symbol: string) => void;
   onCloseTrade: (holding: Holding) => void;
   onAddTo: (holding: Holding) => void;
+  onSell: (holding: Holding) => void;
 }
 
 function fmt(n: number | null | undefined, decimals = 2): string {
@@ -27,7 +28,7 @@ function fmtPrice(n: number | undefined): string {
   return fmt(n, 6);
 }
 
-export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDelete, onViewChart, onCloseTrade, onAddTo }: Props) {
+export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDelete, onViewChart, onCloseTrade, onAddTo, onSell }: Props) {
   const { symbol, avgPrice, qty } = holding;
   const [flash, setFlash] = useState('');
   const prevRef = useRef<number | undefined>(prevPrice);
@@ -114,6 +115,7 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
 
       <div className="row-actions">
         <button className="btn-icon add" onClick={() => onAddTo(holding)} title="Add to position">＋</button>
+        <button className="btn-icon sell" onClick={() => onSell(holding)} title="Sell">↓$</button>
         <button className="btn-icon edit" onClick={() => onEdit(holding)} title="Edit">✎</button>
         <button className="btn-icon close-trade" onClick={() => onCloseTrade(holding)} title="Close trade">⊗</button>
         <button className="btn-icon del" onClick={() => { if (window.confirm(`Remove ${symbol} from portfolio?`)) onDelete(symbol); }} title="Remove">✕</button>
