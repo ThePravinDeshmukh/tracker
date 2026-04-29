@@ -318,7 +318,75 @@
   flex-wrap: wrap;
 }
 .holdings-toolbar .sort-select { flex-shrink: 0; }
-.holdings-toolbar .btn { margin-left: auto; flex-shrink: 0; }
+.holdings-toolbar .btn { flex-shrink: 0; }
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.btn.sell-btn {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  font-weight: 600;
+}
+.btn.sell-btn:hover { background: rgba(245, 158, 11, 0.22); transform: translateY(-1px); }
+
+/* Sell holding picker */
+.sell-holding-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.sell-holding-empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+.sell-holding-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: left;
+  width: 100%;
+}
+.sell-holding-item:hover { border-color: #f59e0b; background: rgba(245, 158, 11, 0.06); }
+.sell-holding-item.selected { border-color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+.sell-holding-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.sell-holding-symbol { font-size: 14px; font-weight: 600; color: var(--text); }
+.sell-holding-qty { font-size: 11px; color: var(--muted); }
+.sell-holding-item-price { font-size: 13px; color: var(--text); margin-left: auto; }
+
+.sell-selected-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: var(--text);
+}
+.sell-selected-summary .muted { color: var(--muted); font-size: 12px; }
 
 .list-header {
   display: grid;
@@ -405,6 +473,7 @@
 .btn-icon.edit:hover { color: var(--accent); background: rgba(124, 109, 250, 0.1); }
 .btn-icon.close-trade:hover { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
 .btn-icon.del:hover { color: var(--red); background: rgba(250, 82, 82, 0.1); }
+.btn-icon.sell { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; color: #f59e0b; }
 .btn-icon.sell:hover { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
 
 .btn.sell-confirm { background: #f59e0b; color: #000; font-weight: 700; }

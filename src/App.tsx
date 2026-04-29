@@ -51,6 +51,7 @@ export default function App() {
   const [chartSymbol, setChartSymbol] = useState<string | null>(null);
   const [closeTradeTarget, setCloseTradeTarget] = useState<Holding | null>(null);
   const [addToTarget, setAddToTarget] = useState<Holding | null>(null);
+  const [sellModalOpen, setSellModalOpen] = useState(false);
   const [sellTarget, setSellTarget] = useState<Holding | null>(null);
   const [pulseOpen, setPulseOpen] = useState(false);
 
@@ -86,8 +87,10 @@ export default function App() {
   const handleCloseTradeModal = (): void => setCloseTradeTarget(null);
   const handleAddTo = (holding: Holding): void => setAddToTarget(holding);
   const handleCloseAddTo = (): void => setAddToTarget(null);
-  const handleSell = (holding: Holding): void => setSellTarget(holding);
-  const handleCloseSell = (): void => setSellTarget(null);
+
+  const handleOpenSell = (holding: Holding): void => { setSellTarget(holding); setSellModalOpen(true); };
+  const handleOpenSellPicker = (): void => { setSellTarget(null); setSellModalOpen(true); };
+  const handleCloseSell = (): void => { setSellModalOpen(false); setSellTarget(null); };
 
   return (
     <div className="app">
@@ -160,7 +163,7 @@ export default function App() {
                 <div className="empty-icon">◈</div>
                 <p>No holdings yet</p>
                 <p className="empty-sub">Add your first crypto to start tracking</p>
-                <button className="btn primary" onClick={() => setShowModal(true)}>Add Coin</button>
+                <button className="btn primary" onClick={() => setShowModal(true)}>Buy Coin</button>
               </div>
             ) : (
               <div className="holdings-list">
@@ -175,9 +178,14 @@ export default function App() {
                     <option value="pnlpct">Sort: P&L %</option>
                     <option value="name">Sort: Name</option>
                   </select>
-                  <button className="btn primary" onClick={() => setShowModal(true)}>
-                    + Add Coin
-                  </button>
+                  <div className="toolbar-actions">
+                    <button className="btn sell-btn" onClick={handleOpenSellPicker}>
+                      − Sell
+                    </button>
+                    <button className="btn primary" onClick={() => setShowModal(true)}>
+                      + Buy
+                    </button>
+                  </div>
                 </div>
                 <div className="list-header">
                   <span>Asset</span>
@@ -199,7 +207,7 @@ export default function App() {
                     onViewChart={handleViewChart}
                     onCloseTrade={handleOpenCloseTrade}
                     onAddTo={handleAddTo}
-                    onSell={handleSell}
+                    onSell={handleOpenSell}
                   />
                 ))}
               </div>
@@ -268,11 +276,12 @@ export default function App() {
         />
       )}
 
-      {sellTarget && (
+      {sellModalOpen && (
         <SellModal
           holding={sellTarget}
-          livePrice={prices[sellTarget.symbol]}
-          onConfirm={(sellQty) => sellFromHolding(sellTarget.symbol, sellQty)}
+          holdings={holdings}
+          prices={prices}
+          onConfirm={(symbol, sellQty) => sellFromHolding(symbol, sellQty)}
           onClose={handleCloseSell}
         />
       )}

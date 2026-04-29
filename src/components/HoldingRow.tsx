@@ -115,7 +115,7 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
 
       <div className="row-actions">
         <button className="btn-icon add" onClick={() => onAddTo(holding)} title="Add to position">＋</button>
-        <button className="btn-icon sell" onClick={() => onSell(holding)} title="Sell">↓$</button>
+        <button className="btn-icon sell" onClick={() => onSell(holding)} title="Sell">Sell</button>
         <button className="btn-icon edit" onClick={() => onEdit(holding)} title="Edit">✎</button>
         <button className="btn-icon close-trade" onClick={() => onCloseTrade(holding)} title="Close trade">⊗</button>
         <button className="btn-icon del" onClick={() => { if (window.confirm(`Remove ${symbol} from portfolio?`)) onDelete(symbol); }} title="Remove">✕</button>
