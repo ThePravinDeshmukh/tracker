@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Holding } from '../types';
+import { Holding, TradeType } from '../types';
 
 const STORAGE_KEY = 'crypto_portfolio_v1';
 
@@ -14,7 +14,7 @@ function loadFromStorage(): Holding[] {
 
 interface UsePortfolioResult {
   holdings: Holding[];
-  addOrUpdateHolding: (symbol: string, avgPrice: string | number, qty: string | number, stopLoss?: string | number) => void;
+  addOrUpdateHolding: (symbol: string, avgPrice: string | number, qty: string | number, stopLoss?: string | number, type?: TradeType) => void;
   addToHolding: (symbol: string, newPrice: number, newQty: number) => void;
   sellFromHolding: (symbol: string, sellQty: number) => void;
   removeHolding: (symbol: string) => void;
@@ -27,7 +27,7 @@ export function usePortfolio(): UsePortfolioResult {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(holdings));
   }, [holdings]);
 
-  const addOrUpdateHolding = (symbol: string, avgPrice: string | number, qty: string | number, stopLoss?: string | number): void => {
+  const addOrUpdateHolding = (symbol: string, avgPrice: string | number, qty: string | number, stopLoss?: string | number, type: TradeType = 'long'): void => {
     setHoldings(prev => {
       const existingIndex = prev.findIndex(h => h.symbol === symbol);
       const parsedSl = stopLoss !== undefined && stopLoss !== '' ? parseFloat(String(stopLoss)) : NaN;
@@ -35,6 +35,7 @@ export function usePortfolio(): UsePortfolioResult {
         symbol,
         avgPrice: parseFloat(String(avgPrice)),
         qty: parseFloat(String(qty)),
+        type,
         ...(isFinite(parsedSl) && parsedSl > 0 ? { stopLoss: parsedSl } : {}),
       };
       if (existingIndex >= 0) {

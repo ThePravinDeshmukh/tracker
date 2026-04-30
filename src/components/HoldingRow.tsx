@@ -30,6 +30,7 @@ function fmtPrice(n: number | undefined): string {
 
 export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDelete, onViewChart, onCloseTrade, onAddTo, onSell }: Props) {
   const { symbol, avgPrice, qty } = holding;
+  const isShort = holding.type === 'short';
   const [flash, setFlash] = useState('');
   const prevRef = useRef<number | undefined>(prevPrice);
 
@@ -45,29 +46,39 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
 
   const invested = avgPrice * qty;
   const currentValue = livePrice ? livePrice * qty : null;
-  const pnl = currentValue !== null ? currentValue - invested : null;
+  const pnl = currentValue !== null
+    ? (isShort ? invested - currentValue : currentValue - invested)
+    : null;
   const pnlPct = pnl !== null && invested > 0 ? (pnl / invested) * 100 : null;
   const color = getCoinColor(symbol);
 
   const { stopLoss } = holding;
-  const slDistancePct = livePrice && stopLoss ? ((livePrice - stopLoss) / stopLoss) * 100 : null;
+  // For shorts: SL is above entry, near/breach when price rises toward it
+  const slDistancePct = livePrice && stopLoss
+    ? (isShort
+        ? ((stopLoss - livePrice) / livePrice) * 100
+        : ((livePrice - stopLoss) / stopLoss) * 100)
+    : null;
   const isSlBreached = slDistancePct !== null && slDistancePct <= 0;
   const isSlNear = slDistancePct !== null && slDistancePct > 0 && slDistancePct <= SL_WARN_PCT;
 
   return (
-    <div className="holding-row fade-in">
+    <div className={`holding-row fade-in${isShort ? ' short-row' : ''}`}>
       <div className="coin-info" onClick={() => onViewChart(symbol)} title="View chart" style={{ cursor: 'pointer' }}>
         <div className="coin-icon" style={{ background: `${color}22`, color }}>
           {getCoinIcon(symbol)}
         </div>
         <div>
-          <div className="coin-symbol">{symbol}</div>
+          <div className="coin-symbol">
+            {symbol}
+            {isShort && <span className="short-badge">SHORT</span>}
+          </div>
           <div className="coin-qty">{fmt(qty, qty < 1 ? 6 : 4)} units</div>
         </div>
       </div>
 
       <div className="col">
-        <div className="label">Avg Price</div>
+        <div className="label">{isShort ? 'Entry Price' : 'Avg Price'}</div>
         <div className="value mono">${fmtPrice(avgPrice)}</div>
       </div>
 
@@ -79,7 +90,7 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
       </div>
 
       <div className="col">
-        <div className="label">Value</div>
+        <div className="label">{isShort ? 'Exposure' : 'Value'}</div>
         <div className="value mono">{currentValue !== null ? `$${fmt(currentValue)}` : '—'}</div>
       </div>
 
@@ -114,8 +125,10 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
       </div>
 
       <div className="row-actions">
-        <button className="btn-icon add" onClick={() => onAddTo(holding)} title="Add to position">＋</button>
-        <button className="btn-icon sell" onClick={() => onSell(holding)} title="Sell">Sell</button>
+        <button className="btn-icon add" onClick={() => onAddTo(holding)} title={isShort ? 'Add to short' : 'Add to position'}>＋</button>
+        <button className="btn-icon sell" onClick={() => onSell(holding)} title={isShort ? 'Cover short' : 'Sell'}>
+          {isShort ? 'Cover' : 'Sell'}
+        </button>
         <button className="btn-icon edit" onClick={() => onEdit(holding)} title="Edit">✎</button>
         <button className="btn-icon close-trade" onClick={() => onCloseTrade(holding)} title="Close trade">⊗</button>
         <button className="btn-icon del" onClick={() => { if (window.confirm(`Remove ${symbol} from portfolio?`)) onDelete(symbol); }} title="Remove">✕</button>

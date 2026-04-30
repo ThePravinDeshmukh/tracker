@@ -335,6 +335,64 @@
 }
 .btn.sell-btn:hover { background: rgba(245, 158, 11, 0.22); transform: translateY(-1px); }
 
+.btn.short-btn {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  font-weight: 600;
+}
+.btn.short-btn:hover { background: rgba(239, 68, 68, 0.2); transform: translateY(-1px); }
+
+.btn.short-confirm { background: #ef4444; color: #fff; font-weight: 700; }
+.btn.short-confirm:hover { background: #f87171; transform: translateY(-1px); }
+
+/* SHORT badge (inline next to symbol) */
+.short-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 4px;
+  padding: 1px 5px;
+  vertical-align: middle;
+  margin-left: 6px;
+  line-height: 1.4;
+}
+/* Larger badge inside modal header */
+.short-badge.modal-badge {
+  font-size: 11px;
+  padding: 2px 7px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* Short row subtle left border tint */
+.holding-row.short-row {
+  border-left: 2px solid rgba(239, 68, 68, 0.4);
+}
+
+/* Short info banner in modal */
+.short-info-banner {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #ef4444;
+  margin-bottom: 4px;
+}
+
+/* Empty state two-button layout */
+.empty-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
 /* Sell holding picker */
 .sell-holding-list {
   display: flex;
