@@ -4,8 +4,6 @@ import { useAvailablePairs } from './useAvailablePairs';
 
 const SPOT_WS_URL = 'wss://stream.binance.com:9443/stream';
 const FUTURES_WS_URL = 'wss://fstream.binance.com/stream';
-const SPOT_REST_URL = 'https://api.binance.com/api/v3/ticker/price';
-const FUTURES_REST_URL = 'https://fapi.binance.com/fapi/v1/ticker/price';
 const SPOT_TICKER24_URL = 'https://api.binance.com/api/v3/ticker/24hr';
 const FUTURES_TICKER24_URL = 'https://fapi.binance.com/fapi/v1/ticker/24hr';
 
@@ -163,7 +161,7 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
         () => void fetchTicker24h(syms, rest24, applyTick),
         (event: CloseEvent) => {
           wsRefs[index].current = null;
-          if (deliberatelyClosed || event.wasClean) return;
+          if (deliberatelyClosed) return;
           reconnectTimers[index].current = setTimeout(() => {
             reconnectTimers[index].current = null;
             if (!deliberatelyClosed) connect(index);
