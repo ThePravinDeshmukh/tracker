@@ -48,7 +48,7 @@ export default function App() {
   const { holdings, addOrUpdateHolding, addToHolding, sellFromHolding, removeHolding } = usePortfolio();
   const { watchlist, addToWatchlist, removeFromWatchlist } = useWatchlist();
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>('holdings');
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => holdings.length === 0 ? 'watchlist' : 'holdings');
   const [showModal, setShowModal] = useState(false);
   const [modalTradeType, setModalTradeType] = useState<TradeType>('long');
   const [editTarget, setEditTarget] = useState<Holding | null>(null);
