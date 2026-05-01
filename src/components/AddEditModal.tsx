@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAvailablePairs } from '../hooks/useAvailablePairs';
-import { Holding } from '../types';
+import { Holding, TradeType } from '../types';
 
 interface Props {
   existing: Holding | null;
-  onSave: (symbol: string, avgPrice: string, qty: string, stopLoss: string) => void;
+  tradeType?: TradeType;
+  onSave: (symbol: string, avgPrice: string, qty: string, stopLoss: string, type: TradeType) => void;
   onClose: () => void;
 }
 
-export default function AddEditModal({ existing, onSave, onClose }: Props) {
+export default function AddEditModal({ existing, tradeType = 'long', onSave, onClose }: Props) {
   const [symbol, setSymbol] = useState(existing?.symbol ?? '');
   const [coinSearch, setCoinSearch] = useState(existing?.symbol ?? '');
   const [showDropdown, setShowDropdown] = useState(false);
@@ -17,6 +18,9 @@ export default function AddEditModal({ existing, onSave, onClose }: Props) {
   const [stopLoss, setStopLoss] = useState(existing?.stopLoss ? String(existing.stopLoss) : '');
   const [error, setError] = useState('');
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const effectiveType: TradeType = existing?.type ?? tradeType;
+  const isShort = effectiveType === 'short';
 
   const { allSymbols, loading: loadingCoins } = useAvailablePairs();
 
@@ -61,19 +65,37 @@ export default function AddEditModal({ existing, onSave, onClose }: Props) {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     if (!symbol) return setError('Select a coin from the list');
-    if (!avgPrice || parseFloat(avgPrice) <= 0) return setError('Enter a valid avg price');
+    if (!avgPrice || parseFloat(avgPrice) <= 0) return setError(`Enter a valid ${isShort ? 'entry' : 'avg'} price`);
     if (!qty || parseFloat(qty) <= 0) return setError('Enter a valid quantity');
-    onSave(symbol, avgPrice, qty, stopLoss);
+    onSave(symbol, avgPrice, qty, stopLoss, effectiveType);
     onClose();
   };
+
+  const modalTitle = existing
+    ? (isShort ? 'Edit Short Position' : 'Edit Holding')
+    : (isShort ? 'Open Short Position' : 'Add Holding');
+
+  const priceLabel = isShort ? 'Entry Price (USD)' : 'Avg Buy Price (USD)';
+  const qtyLabel = isShort ? 'Quantity to Short' : 'Total Quantity';
+  const slLabel = isShort ? 'Stop Loss — above entry (USD)' : 'Stop Loss (USD)';
+  const submitLabel = existing ? 'Update' : (isShort ? 'Open Short' : 'Add to Portfolio');
 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal fade-in">
         <div className="modal-header">
-          <h2>{existing ? 'Edit Holding' : 'Add Holding'}</h2>
+          <h2>
+            {isShort && <span className="short-badge modal-badge">SHORT</span>}
+            {modalTitle}
+          </h2>
           <button className="btn-icon" onClick={onClose}>✕</button>
         </div>
+
+        {isShort && !existing && (
+          <div className="short-info-banner">
+            Profit when price falls below your entry. Loss is unlimited if price rises.
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="field">
@@ -119,7 +141,7 @@ export default function AddEditModal({ existing, onSave, onClose }: Props) {
           </div>
 
           <div className="field">
-            <label>Avg Buy Price (USD)</label>
+            <label>{priceLabel}</label>
             <input
               type="number"
               step="any"
@@ -132,7 +154,7 @@ export default function AddEditModal({ existing, onSave, onClose }: Props) {
           </div>
 
           <div className="field">
-            <label>Total Quantity</label>
+            <label>{qtyLabel}</label>
             <input
               type="number"
               step="any"
@@ -144,12 +166,12 @@ export default function AddEditModal({ existing, onSave, onClose }: Props) {
           </div>
 
           <div className="field">
-            <label>Stop Loss (USD) <span className="optional">optional</span></label>
+            <label>{slLabel} <span className="optional">optional</span></label>
             <input
               type="number"
               step="any"
               min="0"
-              placeholder="e.g. 38000"
+              placeholder={isShort ? 'e.g. 46000 (above entry)' : 'e.g. 38000'}
               value={stopLoss}
               onChange={e => setStopLoss(e.target.value)}
             />
@@ -159,8 +181,8 @@ export default function AddEditModal({ existing, onSave, onClose }: Props) {
 
           <div className="modal-actions">
             <button type="button" className="btn secondary" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn primary">
-              {existing ? 'Update' : 'Add to Portfolio'}
+            <button type="submit" className={`btn ${isShort ? 'short-confirm' : 'primary'}`}>
+              {submitLabel}
             </button>
           </div>
         </form>

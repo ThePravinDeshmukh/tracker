@@ -1,8 +1,11 @@
+export type TradeType = 'long' | 'short';
+
 export interface Holding {
   symbol: string;
   avgPrice: number;
   qty: number;
   stopLoss?: number;
+  type?: TradeType;
 }
 
 export interface EnrichedHolding extends Holding {

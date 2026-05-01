@@ -6,7 +6,7 @@ import { useCryptoPrices } from './hooks/useCryptoPrices';
 import HoldingRow from './components/HoldingRow';
 import AddEditModal from './components/AddEditModal';
 import WatchlistPanel from './components/WatchlistPanel';
-import { Holding, EnrichedHolding, SortKey } from './types';
+import { Holding, EnrichedHolding, SortKey, TradeType } from './types';
 import InstallPrompt from './components/InstallPrompt';
 import AssetChart from './components/AssetChart';
 import CloseTradeModal from './components/CloseTradeModal';
@@ -24,9 +24,13 @@ function fmt(n: number | undefined, decimals = 2): string {
 }
 
 function enrichHolding(holding: Holding, livePrice: number | undefined): EnrichedHolding {
+  const isShort = holding.type === 'short';
   const invested = holding.avgPrice * holding.qty;
   const currentValue = livePrice != null ? livePrice * holding.qty : null;
-  const pnl = currentValue !== null ? currentValue - invested : null;
+  // Short P&L is inverted: profit when price falls below entry
+  const pnl = currentValue !== null
+    ? (isShort ? invested - currentValue : currentValue - invested)
+    : null;
   const pnlPct = pnl !== null && invested > 0 ? (pnl / invested) * 100 : null;
   return { ...holding, livePrice, invested, currentValue, pnl, pnlPct };
 }
@@ -46,6 +50,7 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('holdings');
   const [showModal, setShowModal] = useState(false);
+  const [modalTradeType, setModalTradeType] = useState<TradeType>('long');
   const [editTarget, setEditTarget] = useState<Holding | null>(null);
   const [sortBy, setSortBy] = useState<SortKey>('name');
   const [chartSymbol, setChartSymbol] = useState<string | null>(null);
@@ -79,6 +84,8 @@ export default function App() {
     return { totalInvested, totalValue, totalPnl, totalPct };
   }, [enriched]);
 
+  const handleOpenBuy = (): void => { setModalTradeType('long'); setEditTarget(null); setShowModal(true); };
+  const handleOpenShort = (): void => { setModalTradeType('short'); setEditTarget(null); setShowModal(true); };
   const handleEdit = (holding: Holding): void => { setEditTarget(holding); setShowModal(true); };
   const handleClose = (): void => { setShowModal(false); setEditTarget(null); };
   const handleViewChart = (symbol: string): void => setChartSymbol(symbol);
@@ -87,7 +94,6 @@ export default function App() {
   const handleCloseTradeModal = (): void => setCloseTradeTarget(null);
   const handleAddTo = (holding: Holding): void => setAddToTarget(holding);
   const handleCloseAddTo = (): void => setAddToTarget(null);
-
   const handleOpenSell = (holding: Holding): void => { setSellTarget(holding); setSellModalOpen(true); };
   const handleOpenSellPicker = (): void => { setSellTarget(null); setSellModalOpen(true); };
   const handleCloseSell = (): void => { setSellModalOpen(false); setSellTarget(null); };
@@ -163,7 +169,10 @@ export default function App() {
                 <div className="empty-icon">◈</div>
                 <p>No holdings yet</p>
                 <p className="empty-sub">Add your first crypto to start tracking</p>
-                <button className="btn primary" onClick={() => setShowModal(true)}>Buy Coin</button>
+                <div className="empty-actions">
+                  <button className="btn primary" onClick={handleOpenBuy}>+ Buy</button>
+                  <button className="btn short-btn" onClick={handleOpenShort}>↓ Short</button>
+                </div>
               </div>
             ) : (
               <div className="holdings-list">
@@ -179,19 +188,16 @@ export default function App() {
                     <option value="name">Sort: Name</option>
                   </select>
                   <div className="toolbar-actions">
-                    <button className="btn sell-btn" onClick={handleOpenSellPicker}>
-                      − Sell
-                    </button>
-                    <button className="btn primary" onClick={() => setShowModal(true)}>
-                      + Buy
-                    </button>
+                    <button className="btn sell-btn" onClick={handleOpenSellPicker}>− Sell / Cover</button>
+                    <button className="btn short-btn" onClick={handleOpenShort}>↓ Short</button>
+                    <button className="btn primary" onClick={handleOpenBuy}>+ Buy</button>
                   </div>
                 </div>
                 <div className="list-header">
                   <span>Asset</span>
-                  <span>Avg Price</span>
+                  <span>Entry Price</span>
                   <span>Live Price</span>
-                  <span>Value</span>
+                  <span>Exposure</span>
                   <span>P&amp;L</span>
                   <span>Stop Loss</span>
                   <span></span>
@@ -254,7 +260,8 @@ export default function App() {
       {showModal && (
         <AddEditModal
           existing={editTarget}
-          onSave={(symbol, avgPrice, qty, stopLoss) => addOrUpdateHolding(symbol, avgPrice, qty, stopLoss)}
+          tradeType={modalTradeType}
+          onSave={(symbol, avgPrice, qty, stopLoss, type) => addOrUpdateHolding(symbol, avgPrice, qty, stopLoss, type)}
           onClose={handleClose}
         />
       )}
