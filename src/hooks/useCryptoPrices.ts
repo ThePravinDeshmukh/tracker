@@ -24,6 +24,7 @@ interface UseCryptoPricesResult {
   high24h: PriceMap;
   low24h: PriceMap;
   trades24h: Record<string, number>;
+  lastUpdatedAt: number | null;
 }
 
 type OnTick = (
@@ -104,6 +105,7 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
   const [high24h, setHigh24h] = useState<PriceMap>({});
   const [low24h, setLow24h] = useState<PriceMap>({});
   const [trades24h, setTrades24h] = useState<Record<string, number>>({});
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
   const { spotSymbols: availableSpot, futuresSymbols: availableFutures } = useAvailablePairs(
     useMemo(() => symbols.map(s => s.toUpperCase()), [symbols.join(',')])  // eslint-disable-line
   );
@@ -125,6 +127,7 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
     if (!isNaN(high)) setHigh24h(prev => ({ ...prev, [symbol]: high }));
     if (!isNaN(low)) setLow24h(prev => ({ ...prev, [symbol]: low }));
     if (!isNaN(trades) && trades > 0) setTrades24h(prev => ({ ...prev, [symbol]: trades }));
+    setLastUpdatedAt(Date.now());
   };
 
   useEffect(() => {
@@ -218,7 +221,7 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
     };
   }, [symbols.join(','), futuresKey]); // eslint-disable-line
 
-  return { prices, prevPrices, volumes, change24h, high24h, low24h, trades24h };
+  return { prices, prevPrices, volumes, change24h, high24h, low24h, trades24h, lastUpdatedAt };
 }
 
 export function getCoinIcon(symbol: string): string {

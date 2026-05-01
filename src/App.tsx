@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import './App.css';
 import { usePortfolio } from './hooks/usePortfolio';
 import { useWatchlist } from './hooks/useWatchlist';
@@ -17,6 +17,14 @@ import MarketPulseSidebar from './components/MarketPulseSidebar';
 import { useNetworkLog } from './hooks/useNetworkLog';
 import NetworkConsolePanel from './components/NetworkConsolePanel';
 type ActiveTab = 'holdings' | 'watchlist';
+
+function formatAgo(ts: number | null): string {
+  if (ts === null) return '';
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 5) return 'just now';
+  if (s < 60) return `${s}s ago`;
+  return `${Math.floor(s / 60)}m ago`;
+}
 
 function fmt(n: number | undefined, decimals = 2): string {
   if (n === undefined || isNaN(n)) return '—';
@@ -65,7 +73,15 @@ export default function App() {
     [holdings, watchlist]
   );
 
-  const { prices, prevPrices, volumes, change24h, high24h, low24h, trades24h } = useCryptoPrices(allSymbols);
+  const { prices, prevPrices, volumes, change24h, high24h, low24h, trades24h, lastUpdatedAt } = useCryptoPrices(allSymbols);
+
+  const [agoLabel, setAgoLabel] = useState('');
+  useEffect(() => {
+    const update = () => setAgoLabel(formatAgo(lastUpdatedAt));
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [lastUpdatedAt]);
   const { momentumRows, stressEvents } = useMomentum(allSymbols, prices, volumes);
   const { entries: netEntries, clearEntries } = useNetworkLog();
 
@@ -107,9 +123,12 @@ export default function App() {
             <span className="logo-icon">◈</span>
             <span>Portfolio</span>
           </div>
-          <div className="live-badge">
-            <span className="pulse-dot" />
-            LIVE
+          <div className="header-right">
+            <div className="live-badge">
+              <span className="pulse-dot" />
+              LIVE
+            </div>
+            {agoLabel && <div className="last-updated">{agoLabel}</div>}
           </div>
         </div>
       </header>
