@@ -152,6 +152,10 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
     ];
     let deliberatelyClosed = false;
 
+    // Track last WS message time per connection to detect silently-dead sockets.
+    // Mobile OS can kill TCP without a close frame, leaving readyState=OPEN forever.
+    const lastWsTickAt: [number, number] = [Date.now(), Date.now()];
+
     function connect(index: 0 | 1): void {
       const url = index === 0
         ? buildStreamUrl(SPOT_WS_URL, spotPairs)
@@ -159,9 +163,14 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
       const syms = index === 0 ? spotSymbols : futuresSymbols;
       const rest24 = index === 0 ? SPOT_TICKER24_URL : FUTURES_TICKER24_URL;
 
+      const tickWithTimestamp: OnTick = (symbol, price, volume, change24hPct, high, low, trades) => {
+        lastWsTickAt[index] = Date.now();
+        applyTick(symbol, price, volume, change24hPct, high, low, trades);
+      };
+
       const ws = openTickerStream(
         url,
-        applyTick,
+        tickWithTimestamp,
         () => void fetchTicker24h(syms, rest24, applyTick),
         (event: CloseEvent) => {
           wsRefs[index].current = null;
@@ -182,8 +191,25 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
     if (spotSymbols.length > 0)    connect(0);
     if (futuresSymbols.length > 0) connect(1);
 
+    // Liveness check: if a WS is OPEN but has sent no messages for 60s, close it so
+    // the onclose handler reconnects it. Runs every 15s.
+    const WS_STALE_MS = 60_000;
+    const livenessId = setInterval(() => {
+      for (const index of [0, 1] as const) {
+        const ws = wsRefs[index].current;
+        if (!ws || ws.readyState !== WebSocket.OPEN) continue;
+        if (Date.now() - lastWsTickAt[index] > WS_STALE_MS) {
+          ws.close();
+        }
+      }
+    }, 15_000);
+
     function handleVisibilityChange(): void {
       if (document.visibilityState !== 'visible') return;
+
+      // Reset liveness timestamps so recently-reconnected sockets get a fresh window
+      lastWsTickAt[0] = Date.now();
+      lastWsTickAt[1] = Date.now();
 
       // Serve fresh prices via REST immediately while new socket handshake completes
       if (spotSymbols.length > 0)
@@ -214,6 +240,7 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
 
     return () => {
       deliberatelyClosed = true;
+      clearInterval(livenessId);
       for (const t of reconnectTimers) {
         if (t.current !== null) { clearTimeout(t.current); t.current = null; }
       }
