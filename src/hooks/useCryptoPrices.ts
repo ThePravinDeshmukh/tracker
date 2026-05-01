@@ -23,9 +23,20 @@ interface UseCryptoPricesResult {
   prevPrices: PriceMap;
   volumes: VolumeMap;
   change24h: PriceMap;
+  high24h: PriceMap;
+  low24h: PriceMap;
+  trades24h: Record<string, number>;
 }
 
-type OnTick = (symbol: string, price: number, volume: number, change24hPct: number) => void;
+type OnTick = (
+  symbol: string,
+  price: number,
+  volume: number,
+  change24hPct: number,
+  high: number,
+  low: number,
+  trades: number,
+) => void;
 
 function openTickerStream(
   url: string,
@@ -40,9 +51,12 @@ function openTickerStream(
       if (!data?.s || !data?.c) return;
       const symbol = (data.s as string).replace(/USDT$/, '');
       const price = parseFloat(data.c as string);
-      const volume = parseFloat(data.q as string); // 24h quote asset volume in USDT
-      const change24hPct = parseFloat(data.P as string); // 24h price change percent
-      onTick(symbol, price, volume, change24hPct);
+      const volume = parseFloat(data.q as string);
+      const change24hPct = parseFloat(data.P as string);
+      const high = parseFloat(data.h as string);
+      const low = parseFloat(data.l as string);
+      const trades = parseInt(data.n as string, 10);
+      onTick(symbol, price, volume, change24hPct, high, low, trades);
     } catch {}
   };
   ws.onerror = onError;
@@ -50,7 +64,14 @@ function openTickerStream(
   return ws;
 }
 
-interface Ticker24h { lastPrice: string; quoteVolume: string; priceChangePercent: string; }
+interface Ticker24h {
+  lastPrice: string;
+  quoteVolume: string;
+  priceChangePercent: string;
+  highPrice: string;
+  lowPrice: string;
+  count: number;
+}
 
 async function fetchTicker24h(
   symbols: string[],
@@ -68,6 +89,9 @@ async function fetchTicker24h(
           parseFloat(data.lastPrice),
           parseFloat(data.quoteVolume),
           parseFloat(data.priceChangePercent),
+          parseFloat(data.highPrice),
+          parseFloat(data.lowPrice),
+          data.count ?? 0,
         );
       })
     );
@@ -79,6 +103,9 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
   const [prevPrices, setPrevPrices] = useState<PriceMap>({});
   const [volumes, setVolumes] = useState<VolumeMap>({});
   const [change24h, setChange24h] = useState<PriceMap>({});
+  const [high24h, setHigh24h] = useState<PriceMap>({});
+  const [low24h, setLow24h] = useState<PriceMap>({});
+  const [trades24h, setTrades24h] = useState<Record<string, number>>({});
   const { spotSymbols: availableSpot, futuresSymbols: availableFutures } = useAvailablePairs(
     useMemo(() => symbols.map(s => s.toUpperCase()), [symbols.join(',')])  // eslint-disable-line
   );
@@ -90,13 +117,16 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
     [availableFutures]
   );
 
-  const applyTick = (symbol: string, price: number, volume: number, change24hPct: number): void => {
+  const applyTick = (symbol: string, price: number, volume: number, change24hPct: number, high: number, low: number, trades: number): void => {
     setPrices(prev => {
       setPrevPrices(pp => ({ ...pp, [symbol]: prev[symbol] }));
       return { ...prev, [symbol]: price };
     });
     if (!isNaN(volume)) setVolumes(prev => ({ ...prev, [symbol]: volume }));
     if (!isNaN(change24hPct)) setChange24h(prev => ({ ...prev, [symbol]: change24hPct }));
+    if (!isNaN(high)) setHigh24h(prev => ({ ...prev, [symbol]: high }));
+    if (!isNaN(low)) setLow24h(prev => ({ ...prev, [symbol]: low }));
+    if (!isNaN(trades) && trades > 0) setTrades24h(prev => ({ ...prev, [symbol]: trades }));
   };
 
   useEffect(() => {
@@ -190,7 +220,7 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
     };
   }, [symbols.join(','), futuresKey]); // eslint-disable-line
 
-  return { prices, prevPrices, volumes, change24h };
+  return { prices, prevPrices, volumes, change24h, high24h, low24h, trades24h };
 }
 
 export function getCoinIcon(symbol: string): string {

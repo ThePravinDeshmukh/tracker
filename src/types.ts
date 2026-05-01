@@ -48,10 +48,14 @@ export type Regime = 'high_vol' | 'normal' | 'loading';
 export interface MomentumRow {
   symbol: string;
   lastPrice: number;
-  ret1m: number | null;   // % change from 1 min ago
-  ret5m: number | null;   // % change from 5 min ago
-  vol15m: number | null;  // std dev of 1-min returns over last 15 min
+  ret1m: number | null;       // % change from 1 min ago
+  ret5m: number | null;       // % change from 5 min ago
+  ret1h: number | null;       // % change from 1 hour ago
+  vol15m: number | null;      // std dev of 1-min returns over last 15 min
   regime: Regime;
+  volAdded1m: number | null;  // USDT volume added in last 1 min
+  volAdded5m: number | null;  // USDT volume added in last 5 min
+  volAdded1h: number | null;  // USDT volume added in last 1 hour
 }
 
 export interface StressEvent {
