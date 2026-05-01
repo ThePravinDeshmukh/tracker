@@ -65,8 +65,8 @@ export default function App() {
     [holdings, watchlist]
   );
 
-  const { prices, prevPrices, volumes, change24h } = useCryptoPrices(allSymbols);
-  const { momentumRows, stressEvents } = useMomentum(allSymbols, prices);
+  const { prices, prevPrices, volumes, change24h, high24h, low24h, trades24h } = useCryptoPrices(allSymbols);
+  const { momentumRows, stressEvents } = useMomentum(allSymbols, prices, volumes);
   const { entries: netEntries, clearEntries } = useNetworkLog();
 
   const enriched = useMemo(
@@ -228,6 +228,10 @@ export default function App() {
               prevPrices={prevPrices}
               change24h={change24h}
               volumes={volumes}
+              high24h={high24h}
+              low24h={low24h}
+              trades24h={trades24h}
+              momentumRows={momentumRows}
               onAdd={addToWatchlist}
               onRemove={removeFromWatchlist}
               onViewChart={handleViewChart}

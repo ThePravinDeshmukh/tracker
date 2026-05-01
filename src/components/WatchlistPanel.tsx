@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PriceMap, WatchlistSortKey } from '../types';
+import { PriceMap, WatchlistSortKey, MomentumRow } from '../types';
 import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
 import { useAvailablePairs } from '../hooks/useAvailablePairs';
+import CryptoDetailPanel from './CryptoDetailPanel';
 
 function sortWatchlist(symbols: string[], sortBy: WatchlistSortKey, prices: PriceMap, change24h: PriceMap, volumes: PriceMap): string[] {
   return [...symbols].sort((a, b) => {
@@ -18,6 +19,10 @@ interface Props {
   prevPrices: PriceMap;
   change24h: PriceMap;
   volumes: PriceMap;
+  high24h: PriceMap;
+  low24h: PriceMap;
+  trades24h: Record<string, number>;
+  momentumRows: MomentumRow[];
   onAdd: (symbol: string) => void;
   onRemove: (symbol: string) => void;
   onViewChart: (symbol: string) => void;
@@ -45,10 +50,11 @@ const POPULAR_COINS = [
   'TRX','TON','HBAR','SHIB','FET','WIF','TIA','JUP','RENDER','SEI',
 ];
 
-export default function WatchlistPanel({ watchlist, prices, prevPrices, change24h, volumes, onAdd, onRemove, onViewChart }: Props) {
+export default function WatchlistPanel({ watchlist, prices, prevPrices, change24h, volumes, high24h, low24h, trades24h, momentumRows, onAdd, onRemove, onViewChart }: Props) {
   const [search, setSearch] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [sortBy, setSortBy] = useState<WatchlistSortKey>('volume');
+  const [expandedSymbol, setExpandedSymbol] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { allSymbols, loading } = useAvailablePairs();
 
@@ -161,35 +167,62 @@ export default function WatchlistPanel({ watchlist, prices, prevPrices, change24
             const changePct = change24h[symbol];
             const hasChange = changePct !== undefined && !isNaN(changePct);
             const priceDir  = hasChange ? (changePct > 0 ? 'pos' : changePct < 0 ? 'neg' : '') : '';
+            const isExpanded = expandedSymbol === symbol;
+            const momentumRow = momentumRows.find(r => r.symbol === symbol);
+
+            const handleRowClick = (): void => {
+              setExpandedSymbol(isExpanded ? null : symbol);
+            };
 
             return (
-              <div key={symbol} className="watchlist-row">
-                <button
-                  className="watchlist-asset watchlist-asset-btn"
-                  onClick={() => onViewChart(symbol)}
-                  title={`View ${symbol} chart`}
+              <div key={symbol} className={`watchlist-row-wrap${isExpanded ? ' expanded' : ''}`}>
+                <div
+                  className={`watchlist-row${isExpanded ? ' watchlist-row-expanded' : ''}`}
+                  onClick={handleRowClick}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleRowClick(); }}
                 >
-                  <span className="watchlist-coin-icon" style={{ background: color }}>{icon}</span>
-                  <span className="watchlist-symbol">{symbol}</span>
-                </button>
-                <span className={`watchlist-price mono ${priceDir}`}>
-                  {price !== undefined ? `$${fmtPrice(price)}` : '—'}
-                </span>
-                <span className={`watchlist-change mono ${priceDir}`}>
-                  {hasChange
-                    ? `${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%`
-                    : '—'}
-                </span>
-                <span className="watchlist-volume mono muted">
-                  {fmtVolume(volumes[symbol])}
-                </span>
-                <button
-                  className="btn-icon del"
-                  onClick={() => onRemove(symbol)}
-                  title={`Remove ${symbol}`}
-                >
-                  ×
-                </button>
+                  <button
+                    className="watchlist-asset watchlist-asset-btn"
+                    onClick={e => { e.stopPropagation(); onViewChart(symbol); }}
+                    title={`View ${symbol} chart`}
+                  >
+                    <span className="watchlist-coin-icon" style={{ background: color }}>{icon}</span>
+                    <span className="watchlist-symbol">{symbol}</span>
+                  </button>
+                  <span className={`watchlist-price mono ${priceDir}`}>
+                    {price !== undefined ? `$${fmtPrice(price)}` : '—'}
+                  </span>
+                  <span className={`watchlist-change mono ${priceDir}`}>
+                    {hasChange
+                      ? `${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%`
+                      : '—'}
+                  </span>
+                  <span className="watchlist-volume mono muted">
+                    {fmtVolume(volumes[symbol])}
+                  </span>
+                  <span className={`watchlist-chevron${isExpanded ? ' open' : ''}`}>▶</span>
+                  <button
+                    className="btn-icon del"
+                    onClick={e => { e.stopPropagation(); onRemove(symbol); }}
+                    title={`Remove ${symbol}`}
+                  >
+                    ×
+                  </button>
+                </div>
+                {isExpanded && (
+                  <CryptoDetailPanel
+                    symbol={symbol}
+                    price={price}
+                    change24h={changePct}
+                    volume24h={volumes[symbol]}
+                    high24h={high24h[symbol]}
+                    low24h={low24h[symbol]}
+                    trades24h={trades24h[symbol]}
+                    momentumRow={momentumRow}
+                  />
+                )}
               </div>
             );
           })}

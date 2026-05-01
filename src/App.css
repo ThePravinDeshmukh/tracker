@@ -169,17 +169,33 @@
   background: var(--surface2);
   border-bottom: 1px solid var(--border);
 }
+.watchlist-row-wrap {
+  border-bottom: 1px solid var(--border);
+}
+.watchlist-row-wrap:last-child { border-bottom: none; }
+.watchlist-row-wrap.expanded { border-bottom: none; }
+
 .watchlist-row {
   display: grid;
-  grid-template-columns: 200px 1fr 1fr 1fr 40px;
+  grid-template-columns: 200px 1fr 1fr 1fr 20px 40px;
   gap: 8px;
   padding: 12px 24px;
   align-items: center;
-  border-bottom: 1px solid var(--border);
   transition: background 0.12s;
+  cursor: pointer;
 }
-.watchlist-row:last-child { border-bottom: none; }
 .watchlist-row:hover { background: var(--surface2); }
+.watchlist-row-expanded { background: var(--surface2); }
+
+.watchlist-chevron {
+  font-size: 10px;
+  color: var(--muted);
+  transition: transform 0.2s ease;
+  user-select: none;
+}
+.watchlist-chevron.open {
+  transform: rotate(90deg);
+}
 
 .watchlist-asset {
   display: flex;
@@ -290,14 +306,14 @@
 
 @media (max-width: 900px) {
   .watchlist-header { display: none; }
-  .watchlist-row { grid-template-columns: 1fr 1fr 40px; }
+  .watchlist-row { grid-template-columns: 1fr 1fr 20px 40px; }
   .watchlist-row > .watchlist-asset { grid-column: 1 / -1; padding-bottom: 4px; }
   .watchlist-volume { display: none; }
 }
 @media (max-width: 560px) {
   .tab-btn { padding: 12px 10px; font-size: 13px; }
   .watchlist-add-row, .watchlist-add-bar { padding: 12px 16px; }
-  .watchlist-row { padding: 10px 16px; grid-template-columns: 1fr 1fr 40px; }
+  .watchlist-row { padding: 10px 16px; grid-template-columns: 1fr 1fr 20px 40px; }
   .watchlist-suggestion { padding: 9px 16px; }
 }
 
@@ -1549,5 +1565,131 @@
   .nc-table-header,
   .nc-row { grid-template-columns: 48px 1fr 56px; }
   .nc-duration, .nc-time { display: none; }
+}
+
+/* ── Crypto Detail Panel ── */
+.crypto-detail-panel {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 24px 16px;
+  animation: fadeIn 0.15s ease forwards;
+}
+
+.detail-section {
+  margin-bottom: 14px;
+}
+.detail-section:last-child { margin-bottom: 0; }
+
+.detail-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.detail-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.detail-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: var(--surface2);
+  border-radius: 6px;
+  padding: 8px 4px 6px;
+}
+
+.detail-cell-label {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.detail-cell-value {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--mono);
+}
+.detail-cell-value.pos { color: var(--green); }
+.detail-cell-value.neg { color: var(--red); }
+.detail-cell-value.muted { color: var(--muted); font-weight: 400; font-size: 12px; }
+
+/* Range bar */
+.range-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.range-bar-ends {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+.range-bar-track {
+  position: relative;
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 3px;
+  border: 1px solid var(--border);
+}
+.range-bar-marker {
+  position: absolute;
+  top: -4px;
+  width: 3px;
+  height: 14px;
+  background: var(--text);
+  border-radius: 2px;
+  transform: translateX(-50%);
+  box-shadow: 0 0 4px rgba(240,240,248,0.4);
+}
+.range-bar-label {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  font-size: 12px;
+}
+.range-hint {
+  font-size: 11px;
+}
+
+/* Stats row */
+.detail-section-stats {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 0;
+}
+.detail-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Regime badge */
+.regime-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-family: var(--mono);
+}
+.regime-badge.high-vol { background: rgba(250,82,82,0.15); color: var(--red); border: 1px solid rgba(250,82,82,0.3); }
+.regime-badge.calm     { background: rgba(52,212,138,0.12); color: var(--green); border: 1px solid rgba(52,212,138,0.25); }
+.regime-badge.loading  { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+@media (max-width: 560px) {
+  .crypto-detail-panel { padding: 12px 16px 14px; }
+  .detail-grid-4 { grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .detail-cell { padding: 6px 2px 5px; }
+  .detail-cell-value { font-size: 11px; }
 }
 

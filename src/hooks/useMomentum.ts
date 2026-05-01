@@ -1,10 +1,11 @@
 import { useRef, useState, useEffect } from 'react';
-import { PriceMap, MomentumRow, StressEvent, Regime } from '../types';
+import { PriceMap, VolumeMap, MomentumRow, StressEvent, Regime } from '../types';
 
 // ── Constants (Market Pulse spec) ─────────────────────────────────────────────
 const HISTORY_WINDOW_MS   = 60 * 60 * 1_000;  // keep 60 min of history
 const RET_1M_WINDOW_MS    = 60 * 1_000;        // 1-min return lookback
 const RET_5M_WINDOW_MS    = 5 * 60 * 1_000;    // 5-min return lookback
+const RET_1H_WINDOW_MS    = 60 * 60 * 1_000;   // 1-hour return lookback
 const VOL_WINDOW_MS       = 15 * 60 * 1_000;   // 15-min volatility window
 const VOL_BUCKET_MS       = 60 * 1_000;        // 1-min buckets for vol computation
 const REGIME_PERCENTILE   = 80;                // 80th-pct threshold
@@ -17,6 +18,11 @@ const MAX_STRESS_EVENTS   = 20;
 interface PricePoint {
   time: number;
   price: number;
+}
+
+interface VolumePoint {
+  time: number;
+  volume: number;
 }
 
 // ── Pure helpers ───────────────────────────────────────────────────────────────
@@ -91,6 +97,32 @@ function computeVol15m(history: PricePoint[], now: number): number | null {
 }
 
 /**
+ * Compute USDT volume added within windowMs by diffing the rolling 24h volume snapshots.
+ * Clamps to 0 to handle rare cases where old trades roll off the 24h window.
+ */
+function computeVolAdded(history: VolumePoint[], now: number, windowMs: number): number | null {
+  if (history.length < 2) return null;
+  const oldest = history[0];
+  if (now - oldest.time < windowMs) return null;
+  const reference = (() => {
+    const target = now - windowMs;
+    let lo = 0;
+    let hi = history.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (history[mid].time < target) lo = mid + 1;
+      else hi = mid;
+    }
+    if (lo === 0) return history[0];
+    const before = history[lo - 1];
+    const after = history[lo];
+    return Math.abs(after.time - target) < Math.abs(before.time - target) ? after : before;
+  })();
+  const current = history[history.length - 1].volume;
+  return Math.max(0, current - reference.volume);
+}
+
+/**
  * Classify regime: high_vol if current vol15m exceeds the 80th percentile
  * of recent vol15m history; otherwise normal.
  * Expects volHistory to already be sorted ascending (maintained on insert).
@@ -109,13 +141,16 @@ interface UseMomentumResult {
   stressEvents: StressEvent[];
 }
 
-export function useMomentum(symbols: string[], prices: PriceMap): UseMomentumResult {
+export function useMomentum(symbols: string[], prices: PriceMap, volumes: VolumeMap): UseMomentumResult {
   // Rolling price history per symbol — stored in refs to avoid render thrashing
   const priceHistoryRef = useRef<Map<string, PricePoint[]>>(new Map());
+  const volumeHistoryRef = useRef<Map<string, VolumePoint[]>>(new Map());
   const vol15mHistoryRef = useRef<Map<string, number[]>>(new Map());
   const lastStressTimeRef = useRef<Map<string, number>>(new Map());
   // Track previous prices to detect changes
   const prevPricesRef = useRef<PriceMap>({});
+  // Keep volumes accessible inside the prices effect without adding to its dependency array
+  const volumesRef = useRef<VolumeMap>(volumes);
   // Throttle the computation pass to at most 1Hz — WebSocket ticks can arrive
   // several times per second but momentum metrics don't need sub-second resolution.
   const lastRunRef = useRef<number>(0);
@@ -123,14 +158,19 @@ export function useMomentum(symbols: string[], prices: PriceMap): UseMomentumRes
   const [momentumRows, setMomentumRows] = useState<MomentumRow[]>([]);
   const [stressEvents, setStressEvents] = useState<StressEvent[]>([]);
 
+  // Keep volumesRef current on every render without triggering the price effect
+  useEffect(() => { volumesRef.current = volumes; }, [volumes]);
+
   useEffect(() => {
     const now = Date.now();
     if (now - lastRunRef.current < 1_000) return;
     lastRunRef.current = now;
     const priceHistory = priceHistoryRef.current;
+    const volumeHistory = volumeHistoryRef.current;
     const vol15mHistory = vol15mHistoryRef.current;
     const lastStressTime = lastStressTimeRef.current;
     const prevPrices = prevPricesRef.current;
+    const currentVolumes = volumesRef.current;
 
     let rowsChanged = false;
     const updatedRows: Map<string, MomentumRow> = new Map(
@@ -143,9 +183,7 @@ export function useMomentum(symbols: string[], prices: PriceMap): UseMomentumRes
       if (price === undefined || isNaN(price)) continue;
       if (price === prevPrices[symbol]) continue; // no change, skip
 
-      // 1. Append to rolling history and prune expired points from the front.
-      //    History is kept sorted ascending (push-only), so we only need to walk
-      //    from the front — no full-array filter/copy needed on every tick.
+      // 1. Append to rolling price history and prune expired points from the front.
       const history = priceHistory.get(symbol) ?? [];
       history.push({ time: now, price });
       while (history.length > 1 && now - history[0].time > HISTORY_WINDOW_MS) {
@@ -153,9 +191,21 @@ export function useMomentum(symbols: string[], prices: PriceMap): UseMomentumRes
       }
       priceHistory.set(symbol, history);
 
+      // 1b. Append to rolling volume history (same window)
+      const vol = currentVolumes[symbol];
+      if (vol !== undefined && !isNaN(vol)) {
+        const volHist = volumeHistory.get(symbol) ?? [];
+        volHist.push({ time: now, volume: vol });
+        while (volHist.length > 1 && now - volHist[0].time > HISTORY_WINDOW_MS) {
+          volHist.shift();
+        }
+        volumeHistory.set(symbol, volHist);
+      }
+
       // 2. Compute multi-timeframe returns
       const ret1m = computeReturn(history, now, RET_1M_WINDOW_MS);
       const ret5m = computeReturn(history, now, RET_5M_WINDOW_MS);
+      const ret1h = computeReturn(history, now, RET_1H_WINDOW_MS);
 
       // 3. Compute 15-min volatility
       const vol15m = computeVol15m(history, now);
@@ -182,7 +232,12 @@ export function useMomentum(symbols: string[], prices: PriceMap): UseMomentumRes
         }
       }
 
-      updatedRows.set(symbol, { symbol, lastPrice: price, ret1m, ret5m, vol15m, regime });
+      const symVolHist = volumeHistory.get(symbol) ?? [];
+      const volAdded1m = computeVolAdded(symVolHist, now, RET_1M_WINDOW_MS);
+      const volAdded5m = computeVolAdded(symVolHist, now, RET_5M_WINDOW_MS);
+      const volAdded1h = computeVolAdded(symVolHist, now, RET_1H_WINDOW_MS);
+
+      updatedRows.set(symbol, { symbol, lastPrice: price, ret1m, ret5m, ret1h, vol15m, regime, volAdded1m, volAdded5m, volAdded1h });
       rowsChanged = true;
     }
 
