@@ -365,6 +365,13 @@
   font-weight: 600;
 }
 .btn.short-btn:hover { background: rgba(239, 68, 68, 0.2); transform: translateY(-1px); }
+.btn.long-btn {
+  background: rgba(52, 212, 138, 0.1);
+  color: var(--green);
+  border: 1px solid rgba(52, 212, 138, 0.3);
+  font-weight: 600;
+}
+.btn.long-btn:hover { background: rgba(52, 212, 138, 0.2); transform: translateY(-1px); }
 
 .btn.short-confirm { background: #ef4444; color: #fff; font-weight: 700; }
 .btn.short-confirm:hover { background: #f87171; transform: translateY(-1px); }
