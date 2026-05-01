@@ -6,6 +6,7 @@ const SPOT_WS_URL = 'wss://stream.binance.com:9443/stream';
 const FUTURES_WS_URL = 'wss://fstream.binance.com/stream';
 const SPOT_TICKER24_URL = 'https://api.binance.com/api/v3/ticker/24hr';
 const FUTURES_TICKER24_URL = 'https://fapi.binance.com/fapi/v1/ticker/24hr';
+const POLL_INTERVAL_MS = 30_000;
 
 function toUsdtPair(symbol: string): string {
   return `${symbol.toUpperCase()}USDT`;
@@ -219,6 +220,21 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
       for (const ref of wsRefs) { ref.current?.close(); ref.current = null; }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
+  }, [symbols.join(','), futuresKey]); // eslint-disable-line
+
+  // REST fallback: guards against silently-dead WebSockets (mobile OS kills TCP without close frame)
+  useEffect(() => {
+    const upper = symbols.map(s => s.toUpperCase());
+    const spotSyms = upper.filter(s => !futuresOnlySet.has(s));
+    const futuresSyms = upper.filter(s => futuresOnlySet.has(s));
+    if (spotSyms.length === 0 && futuresSyms.length === 0) return;
+
+    const id = setInterval(() => {
+      if (spotSyms.length > 0) void fetchTicker24h(spotSyms, SPOT_TICKER24_URL, applyTick);
+      if (futuresSyms.length > 0) void fetchTicker24h(futuresSyms, FUTURES_TICKER24_URL, applyTick);
+    }, POLL_INTERVAL_MS);
+
+    return () => clearInterval(id);
   }, [symbols.join(','), futuresKey]); // eslint-disable-line
 
   return { prices, prevPrices, volumes, change24h, high24h, low24h, trades24h, lastUpdatedAt };
