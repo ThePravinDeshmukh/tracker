@@ -189,7 +189,7 @@ export default function App() {
                 <p>No holdings yet</p>
                 <p className="empty-sub">Add your first crypto to start tracking</p>
                 <div className="empty-actions">
-                  <button className="btn primary" onClick={handleOpenBuy}>+ Buy</button>
+                  <button className="btn long-btn" onClick={handleOpenBuy}>↑ Long</button>
                   <button className="btn short-btn" onClick={handleOpenShort}>↓ Short</button>
                 </div>
               </div>
@@ -209,7 +209,7 @@ export default function App() {
                   <div className="toolbar-actions">
                     <button className="btn sell-btn" onClick={handleOpenSellPicker}>− Sell / Cover</button>
                     <button className="btn short-btn" onClick={handleOpenShort}>↓ Short</button>
-                    <button className="btn primary" onClick={handleOpenBuy}>+ Buy</button>
+                    <button className="btn long-btn" onClick={handleOpenBuy}>↑ Long</button>
                   </div>
                 </div>
                 <div className="list-header">
