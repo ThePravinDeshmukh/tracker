@@ -107,7 +107,7 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
   const [low24h, setLow24h] = useState<PriceMap>({});
   const [trades24h, setTrades24h] = useState<Record<string, number>>({});
   const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
-  const { spotSymbols: availableSpot, futuresSymbols: availableFutures } = useAvailablePairs(
+  const { spotSymbols: availableSpot, futuresSymbols: availableFutures, loading: classifying } = useAvailablePairs(
     useMemo(() => symbols.map(s => s.toUpperCase()), [symbols.join(',')])  // eslint-disable-line
   );
 
@@ -133,6 +133,7 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
 
   useEffect(() => {
     if (!symbols || symbols.length === 0) return;
+    if (classifying) return;
 
     const upper = symbols.map(s => s.toUpperCase());
     const spotSymbols = upper.filter(s => !futuresOnlySet.has(s));
@@ -251,6 +252,7 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
 
   // REST fallback: guards against silently-dead WebSockets (mobile OS kills TCP without close frame)
   useEffect(() => {
+    if (classifying) return;
     const upper = symbols.map(s => s.toUpperCase());
     const spotSyms = upper.filter(s => !futuresOnlySet.has(s));
     const futuresSyms = upper.filter(s => futuresOnlySet.has(s));

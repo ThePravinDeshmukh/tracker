@@ -1,15 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAvailablePairs } from '../hooks/useAvailablePairs';
-import { Holding, TradeType } from '../types';
+import { Holding, TradeType, PriceMap } from '../types';
+
+const SPOT_PRICE_URL = 'https://api.binance.com/api/v3/ticker/price';
+const FUTURES_PRICE_URL = 'https://fapi.binance.com/fapi/v1/ticker/price';
+
+async function fetchLivePrice(symbol: string, isSpot: boolean): Promise<number> {
+  const pair = `${symbol.toUpperCase()}USDT`;
+  const url = isSpot ? SPOT_PRICE_URL : FUTURES_PRICE_URL;
+  const res = await fetch(`${url}?symbol=${pair}`);
+  if (!res.ok) throw new Error(`Price not found for ${symbol}`);
+  const data = await res.json() as { price: string };
+  return parseFloat(data.price);
+}
 
 interface Props {
   existing: Holding | null;
   tradeType?: TradeType;
+  prices: PriceMap;
   onSave: (symbol: string, avgPrice: string, qty: string, stopLoss: string, type: TradeType) => void;
   onClose: () => void;
 }
 
-export default function AddEditModal({ existing, tradeType = 'long', onSave, onClose }: Props) {
+export default function AddEditModal({ existing, tradeType = 'long', prices, onSave, onClose }: Props) {
   const [symbol, setSymbol] = useState(existing?.symbol ?? '');
   const [coinSearch, setCoinSearch] = useState(existing?.symbol ?? '');
   const [showDropdown, setShowDropdown] = useState(false);
@@ -17,12 +30,14 @@ export default function AddEditModal({ existing, tradeType = 'long', onSave, onC
   const [qty, setQty] = useState(existing?.qty ? String(existing.qty) : '');
   const [stopLoss, setStopLoss] = useState(existing?.stopLoss ? String(existing.stopLoss) : '');
   const [error, setError] = useState('');
+  const [fetchingPrice, setFetchingPrice] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const effectiveType: TradeType = existing?.type ?? tradeType;
   const isShort = effectiveType === 'short';
 
-  const { allSymbols, loading: loadingCoins } = useAvailablePairs();
+  const { allSymbols, spotSymbols, loading: loadingCoins } = useAvailablePairs();
+  const spotSymbolSet = React.useMemo(() => new Set(spotSymbols), [spotSymbols]);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -49,6 +64,9 @@ export default function AddEditModal({ existing, tradeType = 'long', onSave, onC
     setCoinSearch(coin);
     setShowDropdown(false);
     setError('');
+    if (prices[coin] != null) {
+      setAvgPrice(String(prices[coin]));
+    }
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
@@ -142,15 +160,37 @@ export default function AddEditModal({ existing, tradeType = 'long', onSave, onC
 
           <div className="field">
             <label>{priceLabel}</label>
-            <input
-              type="number"
-              step="any"
-              min="0"
-              placeholder="e.g. 42000"
-              value={avgPrice}
-              onChange={e => { setAvgPrice(e.target.value); setError(''); }}
-              autoFocus={!!existing}
-            />
+            <div className="price-input-row">
+              <input
+                type="number"
+                step="any"
+                min="0"
+                placeholder="e.g. 42000"
+                value={avgPrice}
+                onChange={e => { setAvgPrice(e.target.value); setError(''); }}
+                autoFocus={!!existing}
+              />
+              <button
+                type="button"
+                className="btn-use-market"
+                title="Fetch latest market price"
+                disabled={!symbol || fetchingPrice}
+                onClick={async () => {
+                  setFetchingPrice(true);
+                  try {
+                    const price = await fetchLivePrice(symbol, spotSymbolSet.has(symbol));
+                    setAvgPrice(String(price));
+                    setError('');
+                  } catch {
+                    setError(`Could not fetch price for ${symbol}`);
+                  } finally {
+                    setFetchingPrice(false);
+                  }
+                }}
+              >
+                {fetchingPrice ? '…' : 'Live'}
+              </button>
+            </div>
           </div>
 
           <div className="field">

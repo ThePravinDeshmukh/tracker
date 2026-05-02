@@ -7,7 +7,6 @@ import HoldingRow from './components/HoldingRow';
 import AddEditModal from './components/AddEditModal';
 import WatchlistPanel from './components/WatchlistPanel';
 import { Holding, EnrichedHolding, SortKey, TradeType } from './types';
-import InstallPrompt from './components/InstallPrompt';
 import AssetChart from './components/AssetChart';
 import CloseTradeModal from './components/CloseTradeModal';
 import AddToPositionModal from './components/AddToPositionModal';
@@ -260,8 +259,6 @@ export default function App() {
         </div>
       </main>
 
-      <InstallPrompt />
-
       {/* Market Pulse Toggle */}
       {!pulseOpen && (
         <button className="watcher-toggle" onClick={() => setPulseOpen(true)}>
@@ -284,6 +281,7 @@ export default function App() {
         <AddEditModal
           existing={editTarget}
           tradeType={modalTradeType}
+          prices={prices}
           onSave={(symbol, avgPrice, qty, stopLoss, type) => addOrUpdateHolding(symbol, avgPrice, qty, stopLoss, type)}
           onClose={handleClose}
         />
