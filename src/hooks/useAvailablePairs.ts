@@ -49,15 +49,10 @@ async function isOnSpot(symbol: string): Promise<boolean> {
   const cached = spotCheckCache.get(symbol);
   if (cached !== undefined) return cached;
 
-  try {
-    const res = await fetch(`${SPOT_TICKERS_URL}?symbol=${symbol}USDT`);
-    const result = res.ok;
-    spotCheckCache.set(symbol, result);
-    return result;
-  } catch {
-    spotCheckCache.set(symbol, false);
-    return false;
-  }
+  const pairs = await fetchAllPairs();
+  const result = pairs.spotSymbols.includes(symbol.toUpperCase());
+  spotCheckCache.set(symbol, result);
+  return result;
 }
 
 // ── Hook ───────────────────────────────────────────────────────────────────────
