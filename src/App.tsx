@@ -123,28 +123,6 @@ export default function App() {
 
         {/* Holdings + Watchlist Panel */}
         <div className="table-section">
-          {/* Tab bar */}
-          <div className="tab-bar">
-            <button
-              className={`tab-btn${activeTab === 'holdings' ? ' active' : ''}`}
-              onClick={() => setActiveTab('holdings')}
-            >
-              My Holdings
-              {holdings.length > 0 && (
-                <span className="tab-count">{holdings.length}</span>
-              )}
-            </button>
-            <button
-              className={`tab-btn${activeTab === 'watchlist' ? ' active' : ''}`}
-              onClick={() => setActiveTab('watchlist')}
-            >
-              Watchlist
-              {watchlist.length > 0 && (
-                <span className="tab-count">{watchlist.length}</span>
-              )}
-            </button>
-          </div>
-
           {/* Holdings tab */}
           {activeTab === 'holdings' && (
             holdings.length === 0 ? (
@@ -268,6 +246,23 @@ export default function App() {
           onClose={handleCloseChart}
         />
       )}
+
+      <nav className="bottom-nav">
+        <button
+          className={`bottom-nav-btn${activeTab === 'holdings' ? ' active' : ''}`}
+          onClick={() => setActiveTab('holdings')}
+        >
+          My Holdings
+          {holdings.length > 0 && <span className="tab-count">{holdings.length}</span>}
+        </button>
+        <button
+          className={`bottom-nav-btn${activeTab === 'watchlist' ? ' active' : ''}`}
+          onClick={() => setActiveTab('watchlist')}
+        >
+          Watchlist
+          {watchlist.length > 0 && <span className="tab-count">{watchlist.length}</span>}
+        </button>
+      </nav>
 
       <NetworkConsolePanel entries={netEntries} onClear={clearEntries} />
     </div>
