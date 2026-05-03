@@ -6,7 +6,7 @@ const SPOT_WS_URL = 'wss://stream.binance.com:9443/stream';
 const FUTURES_WS_URL = 'wss://fstream.binance.com/stream';
 const SPOT_TICKER24_URL = 'https://api.binance.com/api/v3/ticker/24hr';
 const FUTURES_TICKER24_URL = 'https://fapi.binance.com/fapi/v1/ticker/24hr';
-const POLL_INTERVAL_MS = 30_000;
+const POLL_INTERVAL_MS = 5_000;
 
 function toUsdtPair(symbol: string): string {
   return `${symbol.toUpperCase()}USDT`;
