@@ -3,17 +3,18 @@ import { PriceMap, VolumeMap } from '../types';
 import { useAvailablePairs } from './useAvailablePairs';
 
 const SPOT_WS_URL = 'wss://stream.binance.com:9443/stream';
-const FUTURES_WS_URL = 'wss://fstream.binance.com/stream';
+const FUTURES_WS_URL = 'wss://fstream.binance.com/market/stream';
 const SPOT_TICKER24_URL = 'https://api.binance.com/api/v3/ticker/24hr';
 const FUTURES_TICKER24_URL = 'https://fapi.binance.com/fapi/v1/ticker/24hr';
-const POLL_INTERVAL_MS = 5_000;
+const SPOT_POLL_INTERVAL_MS = 5_000;
+const FUTURES_POLL_INTERVAL_MS = 30_000;
 
 function toUsdtPair(symbol: string): string {
   return `${symbol.toUpperCase()}USDT`;
 }
 
-function buildStreamUrl(baseWsUrl: string, pairs: string[]): string {
-  const streams = pairs.map(p => `${p.toLowerCase()}@ticker`).join('/');
+function buildStreamUrl(baseWsUrl: string, pairs: string[], streamType: string = 'ticker'): string {
+  const streams = pairs.map(p => `${p.toLowerCase()}@${streamType}`).join('/');
   return `${baseWsUrl}?streams=${streams}`;
 }
 
@@ -48,15 +49,26 @@ function openTickerStream(
   ws.onmessage = (event: MessageEvent) => {
     try {
       const { data } = JSON.parse(event.data as string);
-      if (!data?.s || !data?.c) return;
+      if (!data?.s) return;
       const symbol = (data.s as string).replace(/USDT$/, '');
-      const price = parseFloat(data.c as string);
-      const volume = parseFloat(data.q as string);
-      const change24hPct = parseFloat(data.P as string);
-      const high = parseFloat(data.h as string);
-      const low = parseFloat(data.l as string);
-      const trades = parseInt(data.n as string, 10);
-      onTick(symbol, price, volume, change24hPct, high, low, trades);
+      if (data.e === 'aggTrade') {
+        // aggTrade only carries last trade price; 24h stats come from REST polling
+        const price = parseFloat(data.p as string);
+        if (isNaN(price)) return;
+        onTick(symbol, price, NaN, NaN, NaN, NaN, NaN);
+      } else {
+        // 24hrTicker
+        if (!data.c) return;
+        onTick(
+          symbol,
+          parseFloat(data.c as string),
+          parseFloat(data.q as string),
+          parseFloat(data.P as string),
+          parseFloat(data.h as string),
+          parseFloat(data.l as string),
+          parseInt(data.n as string, 10),
+        );
+      }
     } catch {}
   };
   ws.onerror = onError;
@@ -159,8 +171,8 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
 
     function connect(index: 0 | 1): void {
       const url = index === 0
-        ? buildStreamUrl(SPOT_WS_URL, spotPairs)
-        : buildStreamUrl(FUTURES_WS_URL, futuresPairs);
+        ? buildStreamUrl(SPOT_WS_URL, spotPairs, 'ticker')
+        : buildStreamUrl(FUTURES_WS_URL, futuresPairs, 'aggTrade');
       const syms = index === 0 ? spotSymbols : futuresSymbols;
       const rest24 = index === 0 ? SPOT_TICKER24_URL : FUTURES_TICKER24_URL;
 
@@ -258,12 +270,17 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
     const futuresSyms = upper.filter(s => futuresOnlySet.has(s));
     if (spotSyms.length === 0 && futuresSyms.length === 0) return;
 
-    const id = setInterval(() => {
-      if (spotSyms.length > 0) void fetchTicker24h(spotSyms, SPOT_TICKER24_URL, applyTick);
-      if (futuresSyms.length > 0) void fetchTicker24h(futuresSyms, FUTURES_TICKER24_URL, applyTick);
-    }, POLL_INTERVAL_MS);
+    const spotId = spotSyms.length > 0
+      ? setInterval(() => void fetchTicker24h(spotSyms, SPOT_TICKER24_URL, applyTick), SPOT_POLL_INTERVAL_MS)
+      : null;
+    const futuresId = futuresSyms.length > 0
+      ? setInterval(() => void fetchTicker24h(futuresSyms, FUTURES_TICKER24_URL, applyTick), FUTURES_POLL_INTERVAL_MS)
+      : null;
 
-    return () => clearInterval(id);
+    return () => {
+      if (spotId !== null) clearInterval(spotId);
+      if (futuresId !== null) clearInterval(futuresId);
+    };
   }, [symbols.join(','), futuresKey]); // eslint-disable-line
 
   return { prices, prevPrices, volumes, change24h, high24h, low24h, trades24h, lastUpdatedAt };

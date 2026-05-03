@@ -80,6 +80,12 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
           </div>
         </div>
         <div className="holding-card-stat">
+          <div className="holding-card-stat-label">Notional</div>
+          <div className="holding-card-stat-value mono">
+            {currentValue !== null ? `$${fmt(currentValue)}` : '—'}
+          </div>
+        </div>
+        <div className="holding-card-stat">
           <div className="holding-card-stat-label">UPL@Mark</div>
           <div className={`holding-card-stat-value mono ${pnl === null ? '' : pnl >= 0 ? 'pos' : 'neg'}`}>
             {pnl !== null ? `${pnl >= 0 ? '+' : ''}${fmt(pnl)} USD` : '—'}

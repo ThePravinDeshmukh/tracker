@@ -90,10 +90,9 @@ export default function App() {
 
   const totals = useMemo(() => {
     const totalInvested = enriched.reduce((s, h) => s + h.invested, 0);
-    const totalValue = enriched.reduce((s, h) => s + (h.currentValue ?? 0), 0);
     const totalPnl = enriched.reduce((s, h) => s + (h.pnl ?? 0), 0);
     const totalPct = totalInvested > 0 ? (totalPnl / totalInvested) * 100 : 0;
-    return { totalInvested, totalValue, totalPnl, totalPct };
+    return { totalPnl, totalPct };
   }, [enriched]);
 
   const handleOpenBuy = (): void => { setModalTradeType('long'); setEditTarget(null); setShowModal(true); };
@@ -129,24 +128,12 @@ export default function App() {
       <main className="main">
         {/* Summary Cards */}
         <div className="summary-grid">
-          <div className="card">
-            <div className="card-label">Total Invested</div>
-            <div className="card-value mono">${fmt(totals.totalInvested)}</div>
-          </div>
-          <div className="card">
-            <div className="card-label">Current Value</div>
-            <div className="card-value mono">${fmt(totals.totalValue)}</div>
-          </div>
           <div className={`card highlight ${totals.totalPnl >= 0 ? 'pos' : 'neg'}`}>
             <div className="card-label">Total P&L</div>
             <div className="card-value mono">
               {totals.totalPnl >= 0 ? '+' : ''}${fmt(Math.abs(totals.totalPnl))}
               <span className="card-pct"> ({totals.totalPct >= 0 ? '+' : ''}{fmt(totals.totalPct)}%)</span>
             </div>
-          </div>
-          <div className="card">
-            <div className="card-label">Holdings</div>
-            <div className="card-value mono">{holdings.length}</div>
           </div>
         </div>
 
