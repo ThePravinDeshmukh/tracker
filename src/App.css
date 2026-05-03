@@ -3,7 +3,7 @@
 
 .header {
   position: sticky; top: 0; z-index: 100;
-  background: rgba(10, 10, 15, 0.85);
+  background: rgba(10, 10, 10, 0.85);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
   padding: 0 24px;
@@ -26,9 +26,9 @@
   display: flex; align-items: center; gap: 6px;
   font-family: var(--mono); font-size: 11px; font-weight: 700;
   letter-spacing: 0.12em; color: var(--green);
-  background: rgba(52, 212, 138, 0.1);
+  background: rgba(0, 200, 124, 0.1);
   padding: 4px 10px; border-radius: 20px;
-  border: 1px solid rgba(52, 212, 138, 0.2);
+  border: 1px solid rgba(0, 200, 124, 0.2);
 }
 .pulse-dot {
   width: 6px; height: 6px; border-radius: 50%;
@@ -64,8 +64,8 @@
   padding: 12px 16px;
 }
 .card.highlight { border-color: transparent; }
-.card.highlight.pos { background: rgba(52, 212, 138, 0.08); border-color: rgba(52, 212, 138, 0.25); }
-.card.highlight.neg { background: rgba(250, 82, 82, 0.08); border-color: rgba(250, 82, 82, 0.25); }
+.card.highlight.pos { background: rgba(0, 200, 124, 0.08); border-color: rgba(0, 200, 124, 0.25); }
+.card.highlight.neg { background: rgba(255, 77, 77, 0.08); border-color: rgba(255, 77, 77, 0.25); }
 
 .card-label {
   font-size: 10px; font-weight: 500; letter-spacing: 0.08em;
@@ -139,8 +139,8 @@
   text-align: center;
 }
 .tab-btn.active .tab-count {
-  background: rgba(124, 109, 250, 0.15);
-  border-color: rgba(124, 109, 250, 0.3);
+  background: rgba(240, 147, 28, 0.15);
+  border-color: rgba(240, 147, 28, 0.3);
   color: var(--accent);
 }
 /* ── Watchlist Panel ── */
@@ -282,7 +282,7 @@
   font-family: var(--sans);
   transition: background 0.1s;
 }
-.watchlist-suggestion:hover { background: rgba(124, 109, 250, 0.08); }
+.watchlist-suggestion:hover { background: rgba(240, 147, 28, 0.08); }
 .wsug-icon {
   width: 24px; height: 24px;
   border-radius: 50%;
@@ -351,30 +351,30 @@
 }
 
 .btn.sell-btn {
-  background: rgba(245, 158, 11, 0.12);
-  color: #f59e0b;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: rgba(240, 147, 28, 0.12);
+  color: var(--accent);
+  border: 1px solid rgba(240, 147, 28, 0.3);
   font-weight: 600;
 }
-.btn.sell-btn:hover { background: rgba(245, 158, 11, 0.22); transform: translateY(-1px); }
+.btn.sell-btn:hover { background: rgba(240, 147, 28, 0.22); transform: translateY(-1px); }
 
 .btn.short-btn {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(255, 77, 77, 0.1);
+  color: var(--red);
+  border: 1px solid rgba(255, 77, 77, 0.3);
   font-weight: 600;
 }
-.btn.short-btn:hover { background: rgba(239, 68, 68, 0.2); transform: translateY(-1px); }
+.btn.short-btn:hover { background: rgba(255, 77, 77, 0.2); transform: translateY(-1px); }
 .btn.long-btn {
-  background: rgba(52, 212, 138, 0.1);
+  background: rgba(0, 200, 124, 0.1);
   color: var(--green);
-  border: 1px solid rgba(52, 212, 138, 0.3);
+  border: 1px solid rgba(0, 200, 124, 0.3);
   font-weight: 600;
 }
-.btn.long-btn:hover { background: rgba(52, 212, 138, 0.2); transform: translateY(-1px); }
+.btn.long-btn:hover { background: rgba(0, 200, 124, 0.2); transform: translateY(-1px); }
 
-.btn.short-confirm { background: #ef4444; color: #fff; font-weight: 700; }
-.btn.short-confirm:hover { background: #f87171; transform: translateY(-1px); }
+.btn.short-confirm { background: var(--red); color: #fff; font-weight: 700; }
+.btn.short-confirm:hover { background: #ff6666; transform: translateY(-1px); }
 
 /* SHORT badge (inline next to symbol) */
 .short-badge {
@@ -382,9 +382,9 @@
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--red);
+  background: rgba(255, 77, 77, 0.12);
+  border: 1px solid rgba(255, 77, 77, 0.3);
   border-radius: 4px;
   padding: 1px 5px;
   vertical-align: middle;
@@ -401,17 +401,17 @@
 
 /* Short row subtle left border tint */
 .holding-row.short-row {
-  border-left: 2px solid rgba(239, 68, 68, 0.4);
+  border-left: 3px solid rgba(255, 77, 77, 0.7);
 }
 
 /* Short info banner in modal */
 .short-info-banner {
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: rgba(255, 77, 77, 0.08);
+  border: 1px solid rgba(255, 77, 77, 0.25);
   border-radius: 8px;
   padding: 10px 14px;
   font-size: 12px;
-  color: #ef4444;
+  color: var(--red);
   margin-bottom: 4px;
 }
 
@@ -450,8 +450,8 @@
   text-align: left;
   width: 100%;
 }
-.sell-holding-item:hover { border-color: #f59e0b; background: rgba(245, 158, 11, 0.06); }
-.sell-holding-item.selected { border-color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+.sell-holding-item:hover { border-color: var(--accent); background: rgba(240, 147, 28, 0.06); }
+.sell-holding-item.selected { border-color: var(--accent); background: rgba(240, 147, 28, 0.1); }
 .sell-holding-item-info {
   display: flex;
   flex-direction: column;
@@ -468,8 +468,8 @@
   justify-content: space-between;
   padding: 10px 14px;
   border-radius: 8px;
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: rgba(240, 147, 28, 0.08);
+  border: 1px solid rgba(240, 147, 28, 0.2);
   margin-bottom: 4px;
   font-size: 13px;
   color: var(--text);
@@ -491,8 +491,9 @@
   grid-template-columns: 200px 1fr 1fr 1fr 1fr 1fr 132px;
   gap: 8px;
   align-items: center;
-  padding: 16px 24px;
+  padding: 16px 21px 16px 24px;
   border-bottom: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
   transition: background 0.15s;
 }
 .holding-row:last-child { border-bottom: none; }
@@ -525,7 +526,7 @@
 .pnl.neg { color: var(--red); }
 .pct { opacity: 0.75; font-size: 12px; }
 
-.sl-near { color: #f59e0b; }
+.sl-near { color: var(--accent); }
 .sl-breached { color: var(--red); }
 .sl-distance { font-size: 11px; margin-top: 2px; opacity: 0.85; }
 
@@ -546,7 +547,7 @@
 .btn.primary {
   background: var(--accent); color: #fff;
 }
-.btn.primary:hover { background: #9685fc; transform: translateY(-1px); }
+.btn.primary:hover { background: #f5a73d; transform: translateY(-1px); }
 .btn.secondary {
   background: var(--surface2); color: var(--text); border: 1px solid var(--border);
 }
@@ -557,15 +558,15 @@
   font-size: 14px; padding: 5px 7px; border-radius: 6px; transition: all 0.15s;
   line-height: 1;
 }
-.btn-icon.add:hover { color: var(--green); background: rgba(52, 212, 138, 0.1); }
-.btn-icon.edit:hover { color: var(--accent); background: rgba(124, 109, 250, 0.1); }
-.btn-icon.close-trade:hover { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
-.btn-icon.del:hover { color: var(--red); background: rgba(250, 82, 82, 0.1); }
-.btn-icon.sell { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; color: #f59e0b; }
-.btn-icon.sell:hover { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+.btn-icon.add:hover { color: var(--green); background: rgba(0, 200, 124, 0.1); }
+.btn-icon.edit:hover { color: var(--accent); background: rgba(240, 147, 28, 0.1); }
+.btn-icon.close-trade:hover { color: var(--accent); background: rgba(240, 147, 28, 0.1); }
+.btn-icon.del:hover { color: var(--red); background: rgba(255, 77, 77, 0.1); }
+.btn-icon.sell { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; color: var(--accent); }
+.btn-icon.sell:hover { color: var(--accent); background: rgba(240, 147, 28, 0.1); }
 
-.btn.sell-confirm { background: #f59e0b; color: #000; font-weight: 700; }
-.btn.sell-confirm:hover { background: #fbbf24; transform: translateY(-1px); }
+.btn.sell-confirm { background: var(--accent); color: #000; font-weight: 700; }
+.btn.sell-confirm:hover { background: #f5b800; transform: translateY(-1px); }
 
 .sell-all-link {
   background: none; border: none; padding: 0;
@@ -574,12 +575,12 @@
   font-family: inherit;
 }
 .sell-all-link:hover { color: var(--text); }
-.btn-icon.chart:hover { color: var(--accent); background: rgba(124, 109, 250, 0.1); }
+.btn-icon.chart:hover { color: var(--accent); background: rgba(240, 147, 28, 0.1); }
 
 .btn.danger {
   background: var(--red); color: #fff;
 }
-.btn.danger:hover { background: #ff6b6b; transform: translateY(-1px); }
+.btn.danger:hover { background: #ff6666; transform: translateY(-1px); }
 
 /* ── Empty State ── */
 .empty-state {
@@ -631,7 +632,7 @@
 .btn-use-market:disabled { opacity: 0.35; cursor: default; border-color: var(--border); color: var(--muted); }
 
 .error {
-  background: rgba(250, 82, 82, 0.1); border: 1px solid rgba(250, 82, 82, 0.3);
+  background: rgba(255, 77, 77, 0.1); border: 1px solid rgba(255, 77, 77, 0.3);
   color: var(--red); font-size: 13px; padding: 8px 12px;
   border-radius: 8px; margin-bottom: 16px;
 }
@@ -658,7 +659,7 @@
   font-family: var(--mono);
 }
 .coin-dropdown li:hover, .coin-dropdown li.selected {
-  background: rgba(124, 109, 250, 0.15); color: var(--accent);
+  background: rgba(240, 147, 28, 0.15); color: var(--accent);
 }
 .coin-dropdown li.no-match {
   color: var(--muted); cursor: default; font-family: var(--sans);
@@ -780,8 +781,8 @@
 .add-to-stat .value { font-size: 14px; color: var(--text); }
 
 .add-to-preview {
-  background: rgba(124, 109, 250, 0.06);
-  border: 1px solid rgba(124, 109, 250, 0.2);
+  background: rgba(240, 147, 28, 0.06);
+  border: 1px solid rgba(240, 147, 28, 0.2);
   border-radius: 10px; padding: 12px 16px; margin-bottom: 16px;
 }
 .add-to-preview-row {
@@ -850,12 +851,12 @@
   border: 1px solid;
 }
 .close-trade-pnl.pos {
-  background: rgba(52, 212, 138, 0.06);
-  border-color: rgba(52, 212, 138, 0.25);
+  background: rgba(0, 200, 124, 0.06);
+  border-color: rgba(0, 200, 124, 0.25);
 }
 .close-trade-pnl.neg {
-  background: rgba(250, 82, 82, 0.06);
-  border-color: rgba(250, 82, 82, 0.25);
+  background: rgba(255, 77, 77, 0.06);
+  border-color: rgba(255, 77, 77, 0.25);
 }
 .close-trade-pnl-row {
   display: flex; justify-content: space-between; align-items: center;
@@ -922,7 +923,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--green);
-  background: rgba(52, 212, 138, 0.12);
+  background: rgba(0, 200, 124, 0.12);
   padding: 2px 7px;
   border-radius: 4px;
 }
@@ -1030,8 +1031,8 @@
 }
 .watcher-notification.has-signals {
   color: var(--green);
-  background: rgba(52, 212, 138, 0.07);
-  border-bottom-color: rgba(52, 212, 138, 0.2);
+  background: rgba(0, 200, 124, 0.07);
+  border-bottom-color: rgba(0, 200, 124, 0.2);
 }
 
 .watcher-body {
@@ -1075,8 +1076,8 @@
   margin-bottom: 6px;
 }
 .watcher-signal-card.current {
-  border-color: rgba(52, 212, 138, 0.3);
-  background: rgba(52, 212, 138, 0.05);
+  border-color: rgba(0, 200, 124, 0.3);
+  background: rgba(0, 200, 124, 0.05);
 }
 .watcher-signal-card.past {
   opacity: 0.7;
@@ -1289,17 +1290,17 @@
   white-space: nowrap;
 }
 .regime-badge--high_vol {
-  background: rgba(250, 109, 138, 0.15);
+  background: rgba(255, 77, 77, 0.15);
   color: var(--accent2);
-  border: 1px solid rgba(250, 109, 138, 0.3);
+  border: 1px solid rgba(255, 77, 77, 0.3);
 }
 .regime-badge--normal {
-  background: rgba(52, 212, 138, 0.12);
+  background: rgba(0, 200, 124, 0.12);
   color: var(--green);
-  border: 1px solid rgba(52, 212, 138, 0.25);
+  border: 1px solid rgba(0, 200, 124, 0.25);
 }
 .regime-badge--loading {
-  background: rgba(107, 107, 138, 0.15);
+  background: rgba(136, 136, 136, 0.15);
   color: var(--muted);
   border: 1px solid var(--border);
 }
@@ -1419,7 +1420,7 @@
 }
 .nc-toggle-btn:hover {
   color: var(--accent);
-  background: rgba(124, 109, 250, 0.1);
+  background: rgba(240, 147, 28, 0.1);
 }
 
 .nc-toggle-icon {
@@ -1460,7 +1461,7 @@
 }
 .nc-clear-btn:hover {
   color: var(--red);
-  border-color: rgba(250, 82, 82, 0.4);
+  border-color: rgba(255, 77, 77, 0.4);
 }
 
 /* ── Log list ── */
@@ -1505,7 +1506,7 @@
   gap: 8px;
   padding: 5px 12px;
   align-items: center;
-  border-bottom: 1px solid rgba(34, 34, 58, 0.5);
+  border-bottom: 1px solid rgba(40, 40, 40, 0.5);
   min-height: 28px;
   transition: background 0.1s;
 }
@@ -1522,14 +1523,14 @@
   text-align: center;
 }
 .nc-method--get {
-  background: rgba(52, 212, 138, 0.12);
+  background: rgba(0, 200, 124, 0.12);
   color: var(--green);
-  border: 1px solid rgba(52, 212, 138, 0.25);
+  border: 1px solid rgba(0, 200, 124, 0.25);
 }
 .nc-method--ws {
-  background: rgba(124, 109, 250, 0.15);
+  background: rgba(240, 147, 28, 0.15);
   color: var(--accent);
-  border: 1px solid rgba(124, 109, 250, 0.3);
+  border: 1px solid rgba(240, 147, 28, 0.3);
 }
 
 /* ── URL ── */
