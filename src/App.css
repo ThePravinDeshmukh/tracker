@@ -42,7 +42,7 @@
 
 .main {
   max-width: 1100px; margin: 0 auto;
-  padding: 16px 16px 48px;
+  padding: 16px 16px 72px;
   width: 100%;
 }
 
@@ -75,6 +75,8 @@
 .card.pos .card-value { color: var(--green); }
 .card.neg .card-value { color: var(--red); }
 .card-pct { font-size: 11px; opacity: 0.7; }
+.pnl-card .card-value { font-size: 22px; }
+.pnl-card .card-pct { font-size: 13px; opacity: 0.8; }
 
 /* ── Table ── */
 .table-section {
@@ -514,11 +516,15 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+.holding-card-stat-label.pos { color: var(--green); }
+.holding-card-stat-label.neg { color: var(--red); }
 
 .holding-card-stat-value {
   font-size: 13px;
   color: var(--text);
 }
+.holding-card-stat-value.pos { color: var(--green); }
+.holding-card-stat-value.neg { color: var(--red); }
 
 .holding-card-actions {
   display: flex;
@@ -1729,3 +1735,42 @@
   .detail-cell-value { font-size: 11px; }
 }
 
+
+/* ── Bottom Nav ── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 56px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: stretch;
+  z-index: 100;
+}
+.bottom-nav-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  border-top: 2px solid transparent;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.bottom-nav-btn:hover { color: var(--text); }
+.bottom-nav-btn.active {
+  color: var(--text);
+  border-top-color: var(--accent);
+  font-weight: 600;
+}
+.bottom-nav-btn.active .tab-count {
+  background: rgba(240, 147, 28, 0.15);
+  border-color: rgba(240, 147, 28, 0.3);
+  color: var(--accent);
+}
