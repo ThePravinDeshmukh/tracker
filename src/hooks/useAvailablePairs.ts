@@ -37,22 +37,38 @@ function fetchAllPairs(): Promise<CachedAllPairs> {
       futuresSymbols: extractUsdtBaseSymbols(futuresData),
     };
     return cachedAllPairs;
+  }).catch(err => {
+    // Reset so the next call retries rather than returning a permanently-rejected promise
+    allPairsFetchPromise = null;
+    throw err;
   });
 
   return allPairsFetchPromise;
 }
 
 // ── Per-symbol targeted check cache (used by price hooks) ─────────────────────
-const spotCheckCache = new Map<string, boolean>(); // true = available on spot
+// true = spot, false = futures-only
+const spotCheckCache = new Map<string, boolean>();
 
-async function isOnSpot(symbol: string): Promise<boolean> {
+type Market = 'spot' | 'futures';
+
+async function classifySymbol(symbol: string): Promise<Market> {
   const cached = spotCheckCache.get(symbol);
-  if (cached !== undefined) return cached;
+  if (cached !== undefined) return cached ? 'spot' : 'futures';
 
   const pairs = await fetchAllPairs();
-  const result = pairs.spotSymbols.includes(symbol.toUpperCase());
-  spotCheckCache.set(symbol, result);
-  return result;
+  const upper = symbol.toUpperCase();
+  if (pairs.spotSymbols.includes(upper)) {
+    spotCheckCache.set(symbol, true);
+    return 'spot';
+  }
+  if (pairs.futuresSymbols.includes(upper)) {
+    spotCheckCache.set(symbol, false);
+    return 'futures';
+  }
+  // Not found on either exchange — default to spot so REST errors are handled gracefully
+  spotCheckCache.set(symbol, true);
+  return 'spot';
 }
 
 // ── Hook ───────────────────────────────────────────────────────────────────────
@@ -98,10 +114,10 @@ export function useAvailablePairs(symbols?: string[]): AvailablePairsResult {
     }
 
     setLoadingTargeted(true);
-    Promise.all(syms.map(async s => ({ symbol: s, onSpot: await isOnSpot(s) })))
+    Promise.all(syms.map(async s => ({ symbol: s, market: await classifySymbol(s) })))
       .then(results => {
-        setSpotTargeted(results.filter(r => r.onSpot).map(r => r.symbol));
-        setFuturesTargeted(results.filter(r => !r.onSpot).map(r => r.symbol));
+        setSpotTargeted(results.filter(r => r.market === 'spot').map(r => r.symbol));
+        setFuturesTargeted(results.filter(r => r.market === 'futures').map(r => r.symbol));
       })
       .catch(() => {
         setSpotTargeted(syms);

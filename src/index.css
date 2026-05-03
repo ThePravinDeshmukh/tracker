@@ -3,7 +3,7 @@
   --surface: #111111;
   --surface2: #1a1a1a;
   --border: #282828;
-  --accent: #f0931c;
+  --accent: #64748b;
   --accent2: #ff4d4d;
   --green: #00c87c;
   --red: #ff4d4d;
@@ -11,7 +11,7 @@
   --muted: #8a8a8a;
   --mono: 'Space Mono', monospace;
   --sans: 'Inter', 'DM Sans', sans-serif;
-  --accent-rgb: 240, 147, 28;
+  --accent-rgb: 100, 116, 139;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
