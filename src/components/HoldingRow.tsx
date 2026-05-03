@@ -74,6 +74,10 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
           <div className="holding-card-stat-value mono">{fmt(qty, qty < 1 ? 6 : 4)}</div>
         </div>
         <div className="holding-card-stat">
+          <div className="holding-card-stat-label">{isShort ? 'Avg Sell' : 'Avg Buy'}</div>
+          <div className="holding-card-stat-value mono">{fmtPrice(avgPrice)}</div>
+        </div>
+        <div className="holding-card-stat">
           <div className="holding-card-stat-label">Mark Price</div>
           <div className={`holding-card-stat-value mono live-price ${flash}`}>
             {livePrice ? fmtPrice(livePrice) : <span className="loading-dot">•••</span>}
@@ -96,7 +100,7 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
       <div className="holding-card-actions">
         <button className="hca-btn hca-add" onClick={() => onAddTo(holding)}>Add</button>
         <button className="hca-btn hca-close" onClick={() => onCloseTrade(holding)}>Close</button>
-        <button className="hca-btn hca-edit" onClick={() => onEdit(holding)}>TP/SL</button>
+        <button className="hca-btn hca-edit" onClick={() => onEdit(holding)}>Edit</button>
         <button className="hca-btn hca-del" onClick={() => { if (window.confirm(`Remove ${symbol} from portfolio?`)) onDelete(symbol); }}>✕</button>
       </div>
     </div>
