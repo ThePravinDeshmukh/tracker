@@ -2,8 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
 import { Holding } from '../types';
 
-const SL_WARN_PCT = 5;
-
 interface Props {
   holding: Holding;
   livePrice: number | undefined;
@@ -13,7 +11,6 @@ interface Props {
   onViewChart: (symbol: string) => void;
   onCloseTrade: (holding: Holding) => void;
   onAddTo: (holding: Holding) => void;
-  onSell: (holding: Holding) => void;
 }
 
 function fmt(n: number | null | undefined, decimals = 2): string {
@@ -28,7 +25,7 @@ function fmtPrice(n: number | undefined): string {
   return fmt(n, 6);
 }
 
-export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDelete, onViewChart, onCloseTrade, onAddTo, onSell }: Props) {
+export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDelete, onViewChart, onCloseTrade, onAddTo }: Props) {
   const { symbol, avgPrice, qty } = holding;
   const isShort = holding.type === 'short';
   const [flash, setFlash] = useState('');
@@ -52,86 +49,49 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
   const pnlPct = pnl !== null && invested > 0 ? (pnl / invested) * 100 : null;
   const color = getCoinColor(symbol);
 
-  const { stopLoss } = holding;
-  // For shorts: SL is above entry, near/breach when price rises toward it
-  const slDistancePct = livePrice && stopLoss
-    ? (isShort
-        ? ((stopLoss - livePrice) / livePrice) * 100
-        : ((livePrice - stopLoss) / stopLoss) * 100)
-    : null;
-  const isSlBreached = slDistancePct !== null && slDistancePct <= 0;
-  const isSlNear = slDistancePct !== null && slDistancePct > 0 && slDistancePct <= SL_WARN_PCT;
-
   return (
-    <div className={`holding-row fade-in${isShort ? ' short-row' : ''}`}>
-      <div className="coin-info" onClick={() => onViewChart(symbol)} title="View chart" style={{ cursor: 'pointer' }}>
-        <div className="coin-icon" style={{ background: `${color}22`, color }}>
-          {getCoinIcon(symbol)}
-        </div>
-        <div>
-          <div className="coin-symbol">
-            {symbol}
-            {isShort && <span className="short-badge">SHORT</span>}
+    <div className={`holding-card fade-in${isShort ? ' short-card' : ''}`}>
+      <div className="holding-card-header">
+        <div className="coin-info" onClick={() => onViewChart(symbol)} title="View chart" style={{ cursor: 'pointer' }}>
+          <div className="coin-icon" style={{ background: `${color}22`, color }}>
+            {getCoinIcon(symbol)}
           </div>
-          <div className="coin-qty">{fmt(qty, qty < 1 ? 6 : 4)} units</div>
-        </div>
-      </div>
-
-      <div className="col">
-        <div className="label">{isShort ? 'Entry Price' : 'Avg Price'}</div>
-        <div className="value mono">${fmtPrice(avgPrice)}</div>
-      </div>
-
-      <div className="col">
-        <div className="label">Live Price</div>
-        <div className={`value mono live-price ${flash}`}>
-          {livePrice ? `$${fmtPrice(livePrice)}` : <span className="loading-dot">•••</span>}
-        </div>
-      </div>
-
-      <div className="col">
-        <div className="label">{isShort ? 'Exposure' : 'Value'}</div>
-        <div className="value mono">{currentValue !== null ? `$${fmt(currentValue)}` : '—'}</div>
-      </div>
-
-      <div className="col">
-        <div className="label">P&L</div>
-        <div className={`value mono pnl ${pnl === null ? '' : pnl >= 0 ? 'pos' : 'neg'}`}>
-          {pnl !== null ? (
-            <>
-              <span>{pnl >= 0 ? '+' : ''}${fmt(Math.abs(pnl))}</span>
-              <span className="pct"> ({(pnlPct ?? 0) >= 0 ? '+' : ''}{fmt(pnlPct)}%)</span>
-            </>
-          ) : '—'}
-        </div>
-      </div>
-
-      <div className="col">
-        <div className="label">Stop Loss</div>
-        {stopLoss ? (
-          <div className={`value mono ${isSlBreached ? 'sl-breached' : isSlNear ? 'sl-near' : ''}`}>
-            <div>${fmtPrice(stopLoss)}</div>
-            <div className="sl-distance">
-              {slDistancePct === null
-                ? '—'
-                : isSlBreached
-                  ? 'BREACHED'
-                  : `${fmt(slDistancePct, 2)}% away`}
+          <div>
+            <div className="coin-symbol">
+              {symbol}
+              {isShort && <span className="short-badge">SHORT</span>}
             </div>
           </div>
-        ) : (
-          <div className="value muted">—</div>
-        )}
+        </div>
+        <div className={`holding-card-pnl-pct ${pnlPct === null ? '' : pnlPct >= 0 ? 'pos' : 'neg'}`}>
+          {pnlPct !== null ? `${pnlPct >= 0 ? '+' : ''}${fmt(pnlPct)}%` : '—'}
+        </div>
       </div>
 
-      <div className="row-actions">
-        <button className="btn-icon add" onClick={() => onAddTo(holding)} title={isShort ? 'Add to short' : 'Add to position'}>＋</button>
-        <button className="btn-icon sell" onClick={() => onSell(holding)} title={isShort ? 'Cover short' : 'Sell'}>
-          {isShort ? 'Cover' : 'Sell'}
-        </button>
-        <button className="btn-icon edit" onClick={() => onEdit(holding)} title="Edit">✎</button>
-        <button className="btn-icon close-trade" onClick={() => onCloseTrade(holding)} title="Close trade">⊗</button>
-        <button className="btn-icon del" onClick={() => { if (window.confirm(`Remove ${symbol} from portfolio?`)) onDelete(symbol); }} title="Remove">✕</button>
+      <div className="holding-card-stats">
+        <div className="holding-card-stat">
+          <div className="holding-card-stat-label">Quantity</div>
+          <div className="holding-card-stat-value mono">{fmt(qty, qty < 1 ? 6 : 4)}</div>
+        </div>
+        <div className="holding-card-stat">
+          <div className="holding-card-stat-label">Mark Price</div>
+          <div className={`holding-card-stat-value mono live-price ${flash}`}>
+            {livePrice ? fmtPrice(livePrice) : <span className="loading-dot">•••</span>}
+          </div>
+        </div>
+        <div className="holding-card-stat">
+          <div className="holding-card-stat-label">UPL@Mark</div>
+          <div className={`holding-card-stat-value mono ${pnl === null ? '' : pnl >= 0 ? 'pos' : 'neg'}`}>
+            {pnl !== null ? `${pnl >= 0 ? '+' : ''}${fmt(pnl)} USD` : '—'}
+          </div>
+        </div>
+      </div>
+
+      <div className="holding-card-actions">
+        <button className="hca-btn hca-add" onClick={() => onAddTo(holding)}>Add</button>
+        <button className="hca-btn hca-close" onClick={() => onCloseTrade(holding)}>Close</button>
+        <button className="hca-btn hca-edit" onClick={() => onEdit(holding)}>TP/SL</button>
+        <button className="hca-btn hca-del" onClick={() => { if (window.confirm(`Remove ${symbol} from portfolio?`)) onDelete(symbol); }}>✕</button>
       </div>
     </div>
   );

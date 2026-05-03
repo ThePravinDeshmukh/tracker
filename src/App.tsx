@@ -10,7 +10,6 @@ import { Holding, EnrichedHolding, SortKey, TradeType } from './types';
 import AssetChart from './components/AssetChart';
 import CloseTradeModal from './components/CloseTradeModal';
 import AddToPositionModal from './components/AddToPositionModal';
-import SellModal from './components/SellModal';
 import { useMomentum } from './hooks/useMomentum';
 import MarketPulseSidebar from './components/MarketPulseSidebar';
 import { useNetworkLog } from './hooks/useNetworkLog';
@@ -52,7 +51,7 @@ function sortHoldings(holdings: EnrichedHolding[], sortBy: SortKey): EnrichedHol
 }
 
 export default function App() {
-  const { holdings, addOrUpdateHolding, addToHolding, sellFromHolding, removeHolding } = usePortfolio();
+  const { holdings, addOrUpdateHolding, addToHolding, removeHolding } = usePortfolio();
   const { watchlist, addToWatchlist, removeFromWatchlist } = useWatchlist();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => holdings.length === 0 ? 'watchlist' : 'holdings');
@@ -63,8 +62,6 @@ export default function App() {
   const [chartSymbol, setChartSymbol] = useState<string | null>(null);
   const [closeTradeTarget, setCloseTradeTarget] = useState<Holding | null>(null);
   const [addToTarget, setAddToTarget] = useState<Holding | null>(null);
-  const [sellModalOpen, setSellModalOpen] = useState(false);
-  const [sellTarget, setSellTarget] = useState<Holding | null>(null);
   const [pulseOpen, setPulseOpen] = useState(false);
 
   const allSymbols = useMemo(
@@ -109,9 +106,6 @@ export default function App() {
   const handleCloseTradeModal = (): void => setCloseTradeTarget(null);
   const handleAddTo = (holding: Holding): void => setAddToTarget(holding);
   const handleCloseAddTo = (): void => setAddToTarget(null);
-  const handleOpenSell = (holding: Holding): void => { setSellTarget(holding); setSellModalOpen(true); };
-  const handleOpenSellPicker = (): void => { setSellTarget(null); setSellModalOpen(true); };
-  const handleCloseSell = (): void => { setSellModalOpen(false); setSellTarget(null); };
 
   return (
     <div className="app">
@@ -206,19 +200,9 @@ export default function App() {
                     <option value="name">Sort: Name</option>
                   </select>
                   <div className="toolbar-actions">
-                    <button className="btn sell-btn" onClick={handleOpenSellPicker}>− Sell / Cover</button>
                     <button className="btn short-btn" onClick={handleOpenShort}>↓ Short</button>
                     <button className="btn long-btn" onClick={handleOpenBuy}>↑ Long</button>
                   </div>
-                </div>
-                <div className="list-header">
-                  <span>Asset</span>
-                  <span>Entry Price</span>
-                  <span>Live Price</span>
-                  <span>Exposure</span>
-                  <span>P&amp;L</span>
-                  <span>Stop Loss</span>
-                  <span></span>
                 </div>
                 {sorted.map(h => (
                   <HoldingRow
@@ -231,7 +215,6 @@ export default function App() {
                     onViewChart={handleViewChart}
                     onCloseTrade={handleOpenCloseTrade}
                     onAddTo={handleAddTo}
-                    onSell={handleOpenSell}
                   />
                 ))}
               </div>
@@ -301,16 +284,6 @@ export default function App() {
           holding={addToTarget}
           onConfirm={(newPrice, newQty) => addToHolding(addToTarget.symbol, newPrice, newQty)}
           onClose={handleCloseAddTo}
-        />
-      )}
-
-      {sellModalOpen && (
-        <SellModal
-          holding={sellTarget}
-          holdings={holdings}
-          prices={prices}
-          onConfirm={(symbol, sellQty) => sellFromHolding(symbol, sellQty)}
-          onClose={handleCloseSell}
         />
       )}
 
