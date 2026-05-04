@@ -20,10 +20,9 @@ function fmtPrice(n: number): string {
   return fmt(n, 8);
 }
 
-function calcSliderRange(avgPrice: number, livePrice: number | undefined): { min: number; max: number; step: number } {
-  const reference = Math.max(avgPrice, livePrice ?? avgPrice);
-  const min = avgPrice * 0.1;
-  const max = reference * 3;
+function calcSliderRange(avgPrice: number): { min: number; max: number; step: number } {
+  const min = avgPrice * 0.8;
+  const max = avgPrice * 1.2;
   const step = (max - min) / 1000;
   return { min, max, step };
 }
@@ -36,11 +35,12 @@ export default function CloseTradeModal({ holding, livePrice, onConfirm, onClose
   const [closePriceStr, setClosePriceStr] = useState(String(defaultClose));
   const closePrice = parseFloat(closePriceStr) || defaultClose;
 
-  const { min: sliderMin, max: sliderMax, step: sliderStep } = calcSliderRange(avgPrice, livePrice);
+  const { min: sliderMin, max: sliderMax, step: sliderStep } = calcSliderRange(avgPrice);
 
+  const isShort = holding.type === 'short';
   const invested = avgPrice * qty;
   const closeValue = closePrice * qty;
-  const pnl = closeValue - invested;
+  const pnl = isShort ? (invested - closeValue) : (closeValue - invested);
   const pnlPct = invested > 0 ? (pnl / invested) * 100 : 0;
   const isProfit = pnl >= 0;
 
@@ -83,18 +83,16 @@ export default function CloseTradeModal({ holding, livePrice, onConfirm, onClose
         </div>
 
         {/* Position summary */}
-        <div className="close-trade-stats">
+        <div className="close-trade-stats close-trade-stats-2col">
           <div className="close-trade-stat">
-            <div className="label">Avg Buy Price</div>
-            <div className="value mono">${fmtPrice(avgPrice)}</div>
-          </div>
-          <div className="close-trade-stat">
-            <div className="label">Current Price</div>
-            <div className="value mono">{livePrice ? `$${fmtPrice(livePrice)}` : '—'}</div>
-          </div>
-          <div className="close-trade-stat">
-            <div className="label">Invested</div>
+            <div className="label">Notional @ {isShort ? 'Avg Short' : 'Avg Buy'}</div>
             <div className="value mono">${fmt(invested)}</div>
+            <div className="sublabel mono">${fmtPrice(avgPrice)} × {fmt(qty, qty < 1 ? 6 : 4)}</div>
+          </div>
+          <div className="close-trade-stat">
+            <div className="label">Notional @ Mark</div>
+            <div className="value mono">{livePrice ? `$${fmt(livePrice * qty)}` : '—'}</div>
+            <div className="sublabel mono">{livePrice ? `$${fmtPrice(livePrice)} × ${fmt(qty, qty < 1 ? 6 : 4)}` : '—'}</div>
           </div>
         </div>
 

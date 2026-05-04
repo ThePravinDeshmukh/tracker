@@ -89,13 +89,17 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
       </div>
 
       {expanded && (
-        <div className="holding-card-details">
+        <div className="holding-card-details holding-card-details-3col">
           <div className="holding-card-stat">
             <div className="holding-card-stat-label">{isShort ? 'Avg Sell' : 'Avg Buy'}</div>
-            <div className="holding-card-stat-value mono">{fmtPrice(avgPrice)}</div>
+            <div className="holding-card-stat-value mono">${fmtPrice(avgPrice)}</div>
           </div>
           <div className="holding-card-stat">
             <div className="holding-card-stat-label">Notional</div>
+            <div className="holding-card-stat-value mono">${fmt(invested)}</div>
+          </div>
+          <div className="holding-card-stat">
+            <div className="holding-card-stat-label">Notional @ Mark</div>
             <div className="holding-card-stat-value mono">
               {currentValue !== null ? `$${fmt(currentValue)}` : '—'}
             </div>
