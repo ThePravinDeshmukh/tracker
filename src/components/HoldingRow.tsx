@@ -29,6 +29,7 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
   const { symbol, avgPrice, qty } = holding;
   const isShort = holding.type === 'short';
   const [flash, setFlash] = useState('');
+  const [expanded, setExpanded] = useState(false);
   const prevRef = useRef<number | undefined>(prevPrice);
 
   useEffect(() => {
@@ -74,19 +75,9 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
           <div className="holding-card-stat-value mono">{fmt(qty, qty < 1 ? 6 : 4)}</div>
         </div>
         <div className="holding-card-stat">
-          <div className="holding-card-stat-label">{isShort ? 'Avg Sell' : 'Avg Buy'}</div>
-          <div className="holding-card-stat-value mono">{fmtPrice(avgPrice)}</div>
-        </div>
-        <div className="holding-card-stat">
           <div className="holding-card-stat-label">Mark Price</div>
           <div className={`holding-card-stat-value mono live-price ${flash}`}>
             {livePrice ? fmtPrice(livePrice) : <span className="loading-dot">•••</span>}
-          </div>
-        </div>
-        <div className="holding-card-stat">
-          <div className="holding-card-stat-label">Notional</div>
-          <div className="holding-card-stat-value mono">
-            {currentValue !== null ? `$${fmt(currentValue)}` : '—'}
           </div>
         </div>
         <div className="holding-card-stat">
@@ -97,11 +88,32 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
         </div>
       </div>
 
+      {expanded && (
+        <div className="holding-card-details">
+          <div className="holding-card-stat">
+            <div className="holding-card-stat-label">{isShort ? 'Avg Sell' : 'Avg Buy'}</div>
+            <div className="holding-card-stat-value mono">{fmtPrice(avgPrice)}</div>
+          </div>
+          <div className="holding-card-stat">
+            <div className="holding-card-stat-label">Notional</div>
+            <div className="holding-card-stat-value mono">
+              {currentValue !== null ? `$${fmt(currentValue)}` : '—'}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="holding-card-actions">
         <button className="hca-btn hca-add" onClick={() => onAddTo(holding)}>Add</button>
         <button className="hca-btn hca-close" onClick={() => onCloseTrade(holding)}>Close</button>
         <button className="hca-btn hca-edit" onClick={() => onEdit(holding)}>Edit</button>
-        <button className="hca-btn hca-del" onClick={() => { if (window.confirm(`Remove ${symbol} from portfolio?`)) onDelete(symbol); }}>✕</button>
+        <button
+          className="hca-btn hca-toggle"
+          onClick={() => setExpanded(prev => !prev)}
+          title={expanded ? 'Collapse details' : 'Expand details'}
+        >
+          {expanded ? '▲' : '▼'}
+        </button>
       </div>
     </div>
   );
