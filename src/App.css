@@ -359,16 +359,16 @@
 .btn.sell-btn:hover { background: rgba(0, 0, 0, 0.22); transform: translateY(-1px); }
 
 .btn.short-btn {
-  background: rgba(255, 77, 77, 0.1);
+  background: rgba(0, 0, 0, 0.12);
   color: var(--red);
-  border: 1px solid rgba(255, 77, 77, 0.3);
+  border: 1px solid rgba(0, 0, 0, 0.3);
   font-weight: 600;
 }
 .btn.short-btn:hover { background: rgba(255, 77, 77, 0.2); transform: translateY(-1px); }
 .btn.long-btn {
-  background: rgba(0, 200, 124, 0.1);
+  background: rgba(0, 0, 0, 0.12);
   color: var(--green);
-  border: 1px solid rgba(0, 200, 124, 0.3);
+  border: 1px solid rgba(0, 0, 0, 0.3);
   font-weight: 600;
 }
 .btn.long-btn:hover { background: rgba(0, 200, 124, 0.2); transform: translateY(-1px); }
