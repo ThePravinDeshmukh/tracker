@@ -77,7 +77,7 @@ export default function SellModal({ holding: initialHolding, holdings, prices, o
     if (!selectedHolding) return setError(`Select a holding to ${isShort ? 'cover' : 'sell'}`);
     if (actionPrice <= 0) return setError(`Enter a valid ${isShort ? 'cover' : 'sell'} price`);
     if (actionQty <= 0) return setError('Enter a valid quantity');
-    if (actionQty > selectedHolding.qty) return setError(`Cannot ${isShort ? 'cover' : 'sell'} more than ${fmt(selectedHolding.qty, selectedHolding.qty < 1 ? 6 : 4)} units`);
+    if (actionQty > selectedHolding.qty) return setError(`Cannot ${isShort ? 'cover' : 'sell'} more than ${fmt(selectedHolding.qty, isShort ? 0 : selectedHolding.qty < 1 ? 6 : 4)} units`);
     onConfirm(selectedHolding.symbol, actionQty);
     onClose();
   };
@@ -128,7 +128,7 @@ export default function SellModal({ holding: initialHolding, holdings, prices, o
                         {h.symbol}
                         {holdingIsShort && <span className="short-badge" style={{ marginLeft: 6 }}>SHORT</span>}
                       </span>
-                      <span className="sell-holding-qty">{fmt(h.qty, h.qty < 1 ? 6 : 4)} units</span>
+                      <span className="sell-holding-qty">{fmt(h.qty, h.type === 'short' ? 0 : h.qty < 1 ? 6 : 4)} units</span>
                     </div>
                     <div className="sell-holding-item-price mono">
                       {price ? `$${fmtPrice(price)}` : '—'}
@@ -155,7 +155,7 @@ export default function SellModal({ holding: initialHolding, holdings, prices, o
                 </div>
                 <div className="close-trade-stat">
                   <div className="label">Qty</div>
-                  <div className="value mono">{fmt(selectedHolding.qty, selectedHolding.qty < 1 ? 6 : 4)}</div>
+                  <div className="value mono">{fmt(selectedHolding.qty, isShort ? 0 : selectedHolding.qty < 1 ? 6 : 4)}</div>
                 </div>
               </div>
             )}
@@ -167,7 +167,7 @@ export default function SellModal({ holding: initialHolding, holdings, prices, o
                   <strong>{selectedHolding.symbol}</strong>
                   {isShort && <span className="short-badge" style={{ marginLeft: 6 }}>SHORT</span>}
                 </span>
-                <span className="mono muted">{fmt(selectedHolding.qty, selectedHolding.qty < 1 ? 6 : 4)} units · entry ${fmtPrice(selectedHolding.avgPrice)}</span>
+                <span className="mono muted">{fmt(selectedHolding.qty, isShort ? 0 : selectedHolding.qty < 1 ? 6 : 4)} units · entry ${fmtPrice(selectedHolding.avgPrice)}</span>
               </div>
             )}
 
@@ -196,7 +196,7 @@ export default function SellModal({ holding: initialHolding, holdings, prices, o
                   step="any"
                   min="0"
                   max={selectedHolding.qty}
-                  placeholder={`max ${fmt(selectedHolding.qty, selectedHolding.qty < 1 ? 6 : 4)}`}
+                  placeholder={`max ${fmt(selectedHolding.qty, isShort ? 0 : selectedHolding.qty < 1 ? 6 : 4)}`}
                   value={actionQtyStr}
                   onChange={e => { setActionQtyStr(e.target.value); setError(''); }}
                 />

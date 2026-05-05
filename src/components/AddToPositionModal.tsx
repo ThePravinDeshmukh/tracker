@@ -44,7 +44,7 @@ export default function AddToPositionModal({ holding, onConfirm, onClose }: Prop
     onClose();
   };
 
-  const currentQtyDecimals = holding.qty < 1 ? 6 : 4;
+  const currentQtyDecimals = holding.type === 'short' ? 0 : holding.qty < 1 ? 6 : 4;
 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>

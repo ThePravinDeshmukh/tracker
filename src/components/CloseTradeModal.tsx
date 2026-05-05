@@ -75,7 +75,7 @@ export default function CloseTradeModal({ holding, livePrice, onConfirm, onClose
             <div>
               <div style={{ fontWeight: 600, fontSize: 16 }}>Close Position: {symbol}</div>
               <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2, fontFamily: 'var(--mono)' }}>
-                {fmt(qty, qty < 1 ? 6 : 4)} units
+                {fmt(qty, isShort ? 0 : qty < 1 ? 6 : 4)} units
               </div>
             </div>
           </div>
@@ -87,12 +87,12 @@ export default function CloseTradeModal({ holding, livePrice, onConfirm, onClose
           <div className="close-trade-stat">
             <div className="label">Notional @ {isShort ? 'Avg Short' : 'Avg Buy'}</div>
             <div className="value mono">${fmt(invested)}</div>
-            <div className="sublabel mono">${fmtPrice(avgPrice)} × {fmt(qty, qty < 1 ? 6 : 4)}</div>
+            <div className="sublabel mono">${fmtPrice(avgPrice)} × {fmt(qty, isShort ? 0 : qty < 1 ? 6 : 4)}</div>
           </div>
           <div className="close-trade-stat">
             <div className="label">Notional @ Mark</div>
             <div className="value mono">{livePrice ? `$${fmt(livePrice * qty)}` : '—'}</div>
-            <div className="sublabel mono">{livePrice ? `$${fmtPrice(livePrice)} × ${fmt(qty, qty < 1 ? 6 : 4)}` : '—'}</div>
+            <div className="sublabel mono">{livePrice ? `$${fmtPrice(livePrice)} × ${fmt(qty, isShort ? 0 : qty < 1 ? 6 : 4)}` : '—'}</div>
           </div>
         </div>
 
