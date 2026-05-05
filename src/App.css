@@ -139,8 +139,8 @@
   text-align: center;
 }
 .tab-btn.active .tab-count {
-  background: rgba(240, 147, 28, 0.15);
-  border-color: rgba(240, 147, 28, 0.3);
+  background: rgba(0, 0, 0, 0.15);
+  border-color: rgba(0, 0, 0, 0.3);
   color: var(--accent);
 }
 /* ── Watchlist Panel ── */
@@ -282,7 +282,7 @@
   font-family: var(--sans);
   transition: background 0.1s;
 }
-.watchlist-suggestion:hover { background: rgba(240, 147, 28, 0.08); }
+.watchlist-suggestion:hover { background: rgba(0, 0, 0, 0.08); }
 .wsug-icon {
   width: 24px; height: 24px;
   border-radius: 50%;
@@ -351,12 +351,12 @@
 }
 
 .btn.sell-btn {
-  background: rgba(240, 147, 28, 0.12);
+  background: rgba(0, 0, 0, 0.12);
   color: var(--accent);
-  border: 1px solid rgba(240, 147, 28, 0.3);
+  border: 1px solid rgba(0, 0, 0, 0.3);
   font-weight: 600;
 }
-.btn.sell-btn:hover { background: rgba(240, 147, 28, 0.22); transform: translateY(-1px); }
+.btn.sell-btn:hover { background: rgba(0, 0, 0, 0.22); transform: translateY(-1px); }
 
 .btn.short-btn {
   background: rgba(255, 77, 77, 0.1);
@@ -450,8 +450,8 @@
   text-align: left;
   width: 100%;
 }
-.sell-holding-item:hover { border-color: var(--accent); background: rgba(240, 147, 28, 0.06); }
-.sell-holding-item.selected { border-color: var(--accent); background: rgba(240, 147, 28, 0.1); }
+.sell-holding-item:hover { border-color: var(--accent); background: rgba(0, 0, 0, 0.06); }
+.sell-holding-item.selected { border-color: var(--accent); background: rgba(0, 0, 0, 0.1); }
 .sell-holding-item-info {
   display: flex;
   flex-direction: column;
@@ -468,8 +468,8 @@
   justify-content: space-between;
   padding: 10px 14px;
   border-radius: 8px;
-  background: rgba(240, 147, 28, 0.08);
-  border: 1px solid rgba(240, 147, 28, 0.2);
+  background: rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.2);
   margin-bottom: 4px;
   font-size: 13px;
   color: var(--text);
@@ -559,10 +559,10 @@
   transition: all 0.15s;
   text-align: center;
 }
-.hca-add { color: var(--green); border-color: rgba(0, 200, 124, 0.3); background: rgba(0, 200, 124, 0.05); }
-.hca-add:hover { background: rgba(0, 200, 124, 0.12); }
-.hca-close { color: var(--red); border-color: rgba(255, 77, 77, 0.3); background: rgba(255, 77, 77, 0.05); }
-.hca-close:hover { background: rgba(255, 77, 77, 0.12); }
+.hca-add { color: var(--green); }
+.hca-add:hover { border-color: var(--muted); background: var(--surface); }
+.hca-close { color: var(--red); }
+.hca-close:hover { border-color: var(--muted); background: var(--surface); }
 .hca-edit { color: var(--text); }
 .hca-edit:hover { border-color: var(--muted); background: var(--surface); }
 .hca-toggle { flex: 0 0 auto; padding: 5px 10px; font-size: 9px; }
@@ -604,7 +604,7 @@
 .btn.primary {
   background: var(--accent); color: #fff;
 }
-.btn.primary:hover { background: #f5a73d; transform: translateY(-1px); }
+.btn.primary:hover { background: #1a1a1a; transform: translateY(-1px); }
 .btn.secondary {
   background: var(--surface2); color: var(--text); border: 1px solid var(--border);
 }
@@ -616,14 +616,14 @@
   line-height: 1;
 }
 .btn-icon.add:hover { color: var(--green); background: rgba(0, 200, 124, 0.1); }
-.btn-icon.edit:hover { color: var(--accent); background: rgba(240, 147, 28, 0.1); }
-.btn-icon.close-trade:hover { color: var(--accent); background: rgba(240, 147, 28, 0.1); }
+.btn-icon.edit:hover { color: var(--accent); background: rgba(0, 0, 0, 0.1); }
+.btn-icon.close-trade:hover { color: var(--accent); background: rgba(0, 0, 0, 0.1); }
 .btn-icon.del:hover { color: var(--red); background: rgba(255, 77, 77, 0.1); }
 .btn-icon.sell { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; color: var(--accent); }
-.btn-icon.sell:hover { color: var(--accent); background: rgba(240, 147, 28, 0.1); }
+.btn-icon.sell:hover { color: var(--accent); background: rgba(0, 0, 0, 0.1); }
 
 .btn.sell-confirm { background: var(--accent); color: #000; font-weight: 700; }
-.btn.sell-confirm:hover { background: #f5b800; transform: translateY(-1px); }
+.btn.sell-confirm:hover { background: #1a1a1a; transform: translateY(-1px); }
 
 .sell-all-link {
   background: none; border: none; padding: 0;
@@ -632,7 +632,7 @@
   font-family: inherit;
 }
 .sell-all-link:hover { color: var(--text); }
-.btn-icon.chart:hover { color: var(--accent); background: rgba(240, 147, 28, 0.1); }
+.btn-icon.chart:hover { color: var(--accent); background: rgba(0, 0, 0, 0.1); }
 
 .btn.danger {
   background: var(--red); color: #fff;
@@ -716,7 +716,7 @@
   font-family: var(--mono);
 }
 .coin-dropdown li:hover, .coin-dropdown li.selected {
-  background: rgba(240, 147, 28, 0.15); color: var(--accent);
+  background: rgba(0, 0, 0, 0.15); color: var(--accent);
 }
 .coin-dropdown li.no-match {
   color: var(--muted); cursor: default; font-family: var(--sans);
@@ -838,8 +838,8 @@
 .add-to-stat .value { font-size: 14px; color: var(--text); }
 
 .add-to-preview {
-  background: rgba(240, 147, 28, 0.06);
-  border: 1px solid rgba(240, 147, 28, 0.2);
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 10px; padding: 12px 16px; margin-bottom: 16px;
 }
 .add-to-preview-row {
@@ -1467,7 +1467,7 @@
 }
 .nc-toggle-btn:hover {
   color: var(--accent);
-  background: rgba(240, 147, 28, 0.1);
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .nc-toggle-icon {
@@ -1575,9 +1575,9 @@
   border: 1px solid rgba(0, 200, 124, 0.25);
 }
 .nc-method--ws {
-  background: rgba(240, 147, 28, 0.15);
+  background: rgba(0, 0, 0, 0.15);
   color: var(--accent);
-  border: 1px solid rgba(240, 147, 28, 0.3);
+  border: 1px solid rgba(0, 0, 0, 0.3);
 }
 
 /* ── URL ── */
@@ -1784,7 +1784,7 @@
   font-weight: 600;
 }
 .bottom-nav-btn.active .tab-count {
-  background: rgba(240, 147, 28, 0.15);
-  border-color: rgba(240, 147, 28, 0.3);
+  background: rgba(0, 0, 0, 0.15);
+  border-color: rgba(0, 0, 0, 0.3);
   color: var(--accent);
 }
