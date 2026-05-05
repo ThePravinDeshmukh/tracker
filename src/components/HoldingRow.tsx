@@ -72,7 +72,7 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
       <div className="holding-card-stats">
         <div className="holding-card-stat">
           <div className="holding-card-stat-label">Quantity</div>
-          <div className="holding-card-stat-value mono">{fmt(qty, qty < 1 ? 6 : 4)}</div>
+          <div className="holding-card-stat-value mono">{fmt(qty, holding.type === 'short' ? 0 : qty < 1 ? 6 : 4)}</div>
         </div>
         <div className="holding-card-stat">
           <div className="holding-card-stat-label">Mark Price</div>
