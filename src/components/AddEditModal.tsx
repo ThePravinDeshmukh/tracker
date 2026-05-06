@@ -2,14 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAvailablePairs } from '../hooks/useAvailablePairs';
 import { Holding, TradeType, PriceMap } from '../types';
 
-const SPOT_PRICE_URL = 'https://api.binance.com/api/v3/ticker/price';
 const FUTURES_PRICE_URL = 'https://fapi.binance.com/fapi/v1/ticker/price';
 
-async function fetchLivePrice(symbol: string, isSpot: boolean): Promise<number> {
-  const pair = `${symbol.toUpperCase()}USDT`;
-  const url = isSpot ? SPOT_PRICE_URL : FUTURES_PRICE_URL;
-  const res = await fetch(`${url}?symbol=${pair}`);
-  if (!res.ok) throw new Error(`Price not found for ${symbol}`);
+async function fetchLivePrice(pair: string): Promise<number> {
+  const res = await fetch(`${FUTURES_PRICE_URL}?symbol=${pair}`);
+  if (!res.ok) throw new Error(`Price not found for ${pair}`);
   const data = await res.json() as { price: string };
   return parseFloat(data.price);
 }
@@ -36,8 +33,7 @@ export default function AddEditModal({ existing, tradeType = 'long', prices, onS
   const effectiveType: TradeType = existing?.type ?? tradeType;
   const isShort = effectiveType === 'short';
 
-  const { allSymbols, spotSymbols, loading: loadingCoins } = useAvailablePairs();
-  const spotSymbolSet = React.useMemo(() => new Set(spotSymbols), [spotSymbols]);
+  const { allSymbols, loading: loadingCoins } = useAvailablePairs();
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -124,7 +120,7 @@ export default function AddEditModal({ existing, tradeType = 'long', prices, onS
               <div className="coin-search-wrapper" ref={wrapperRef}>
                 <input
                   type="text"
-                  placeholder="Search coin… (e.g. BTC, ETH)"
+                  placeholder="Search coin… (e.g. BTCUSDT, ETHUSDT)"
                   value={coinSearch}
                   onChange={handleSearchChange}
                   onFocus={() => setShowDropdown(true)}
@@ -178,7 +174,7 @@ export default function AddEditModal({ existing, tradeType = 'long', prices, onS
                 onClick={async () => {
                   setFetchingPrice(true);
                   try {
-                    const price = await fetchLivePrice(symbol, spotSymbolSet.has(symbol));
+                    const price = await fetchLivePrice(symbol);
                     setAvgPrice(String(price));
                     setError('');
                   } catch {

@@ -10,25 +10,19 @@ const STORAGE_KEY = 'watcher-watchlist';
 const MAX_WATCHLIST = 20;
 const MAX_PAST_SIGNALS = 20;
 const KLINES_LIMIT = 6;
-const SPOT_KLINES_URL = 'https://api.binance.com/api/v3/klines';
 const FUTURES_KLINES_URL = 'https://fapi.binance.com/fapi/v1/klines';
 
-function toUsdtPair(symbol: string): string {
-  return `${symbol.toUpperCase()}USDT`;
+function toFullPair(symbol: string): string {
+  return symbol.endsWith('USDT') ? symbol : `${symbol}USDT`;
 }
 
 type KlineRow = [number, string, string, string, string, string, ...unknown[]];
 
-async function fetchKlinesForSymbol(symbol: string): Promise<KlineRow[] | null> {
-  const pair = toUsdtPair(symbol);
-  for (const baseUrl of [SPOT_KLINES_URL, FUTURES_KLINES_URL]) {
-    try {
-      const res = await fetch(`${baseUrl}?symbol=${pair}&interval=1m&limit=${KLINES_LIMIT}`);
-      if (res.ok) return (await res.json()) as KlineRow[];
-    } catch {
-      continue;
-    }
-  }
+async function fetchKlinesForSymbol(pair: string): Promise<KlineRow[] | null> {
+  try {
+    const res = await fetch(`${FUTURES_KLINES_URL}?symbol=${pair}&interval=1m&limit=${KLINES_LIMIT}`);
+    if (res.ok) return (await res.json()) as KlineRow[];
+  } catch {}
   return null;
 }
 
@@ -56,7 +50,8 @@ export function useWatcher(): UseWatcherResult {
   const [watchlist, setWatchlist] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? (JSON.parse(saved) as string[]) : [];
+      const list = saved ? (JSON.parse(saved) as string[]) : [];
+      return list.map(toFullPair);
     } catch {
       return [];
     }

@@ -3,10 +3,15 @@ import { Holding, TradeType } from '../types';
 
 const STORAGE_KEY = 'crypto_portfolio_v1';
 
+function toFullPair(symbol: string): string {
+  return symbol.endsWith('USDT') ? symbol : `${symbol}USDT`;
+}
+
 function loadFromStorage(): Holding[] {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? (JSON.parse(saved) as Holding[]) : [];
+    const holdings = saved ? (JSON.parse(saved) as Holding[]) : [];
+    return holdings.map(h => ({ ...h, symbol: toFullPair(h.symbol) }));
   } catch {
     return [];
   }

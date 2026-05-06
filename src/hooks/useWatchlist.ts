@@ -2,10 +2,15 @@ import { useState, useEffect } from 'react';
 
 const STORAGE_KEY = 'crypto_watchlist_v1';
 
+function toFullPair(symbol: string): string {
+  return symbol.endsWith('USDT') ? symbol : `${symbol}USDT`;
+}
+
 function loadFromStorage(): string[] {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? (JSON.parse(saved) as string[]) : [];
+    const watchlist = saved ? (JSON.parse(saved) as string[]) : [];
+    return watchlist.map(toFullPair);
   } catch {
     return [];
   }
