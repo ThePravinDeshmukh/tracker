@@ -1,17 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { PriceMap, VolumeMap } from '../types';
-import { useAvailablePairs } from './useAvailablePairs';
 
-const SPOT_WS_URL = 'wss://stream.binance.com:9443/stream';
 const FUTURES_WS_URL = 'wss://fstream.binance.com/market/stream';
-const SPOT_TICKER24_URL = 'https://api.binance.com/api/v3/ticker/24hr';
 const FUTURES_TICKER24_URL = 'https://fapi.binance.com/fapi/v1/ticker/24hr';
-const SPOT_POLL_INTERVAL_MS = 5_000;
 const FUTURES_POLL_INTERVAL_MS = 30_000;
-
-function toUsdtPair(symbol: string): string {
-  return `${symbol.toUpperCase()}USDT`;
-}
 
 function buildStreamUrl(baseWsUrl: string, pairs: string[], streamType: string = 'ticker'): string {
   const streams = pairs.map(p => `${p.toLowerCase()}@${streamType}`).join('/');
@@ -50,14 +42,12 @@ function openTickerStream(
     try {
       const { data } = JSON.parse(event.data as string);
       if (!data?.s) return;
-      const symbol = (data.s as string).replace(/USDT$/, '');
+      const symbol = data.s as string;
       if (data.e === 'aggTrade') {
-        // aggTrade only carries last trade price; 24h stats come from REST polling
         const price = parseFloat(data.p as string);
         if (isNaN(price)) return;
         onTick(symbol, price, NaN, NaN, NaN, NaN, NaN);
       } else {
-        // 24hrTicker
         if (!data.c) return;
         onTick(
           symbol,
@@ -86,18 +76,18 @@ interface Ticker24h {
 }
 
 async function fetchTicker24h(
-  symbols: string[],
+  pairs: string[],
   baseUrl: string,
   applyTick: OnTick,
 ): Promise<void> {
   try {
     await Promise.all(
-      symbols.map(async symbol => {
-        const res = await fetch(`${baseUrl}?symbol=${toUsdtPair(symbol)}`);
+      pairs.map(async pair => {
+        const res = await fetch(`${baseUrl}?symbol=${pair}`);
         if (!res.ok) return;
         const data = await res.json() as Ticker24h;
         applyTick(
-          symbol,
+          pair,
           parseFloat(data.lastPrice),
           parseFloat(data.quoteVolume),
           parseFloat(data.priceChangePercent),
@@ -119,16 +109,6 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
   const [low24h, setLow24h] = useState<PriceMap>({});
   const [trades24h, setTrades24h] = useState<Record<string, number>>({});
   const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
-  const { spotSymbols: availableSpot, futuresSymbols: availableFutures, loading: classifying } = useAvailablePairs(
-    useMemo(() => symbols.map(s => s.toUpperCase()), [symbols.join(',')])  // eslint-disable-line
-  );
-
-  const futuresOnlySet = useMemo(() => new Set(availableFutures), [availableFutures]);
-
-  const futuresKey = useMemo(
-    () => availableFutures.slice().sort().join(','),
-    [availableFutures]
-  );
 
   const applyTick = (symbol: string, price: number, volume: number, change24hPct: number, high: number, low: number, trades: number): void => {
     setPrices(prev => {
@@ -145,108 +125,60 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
 
   useEffect(() => {
     if (!symbols || symbols.length === 0) return;
-    if (classifying) return;
 
-    const upper = symbols.map(s => s.toUpperCase());
-    const spotSymbols = upper.filter(s => !futuresOnlySet.has(s));
-    const futuresSymbols = upper.filter(s => futuresOnlySet.has(s));
-    const spotPairs = spotSymbols.map(toUsdtPair);
-    const futuresPairs = futuresSymbols.map(toUsdtPair);
-
-    // Mutable state scoped to this effect run — plain objects to avoid re-renders
-    const wsRefs: [{ current: WebSocket | null }, { current: WebSocket | null }] = [
-      { current: null }, { current: null },
-    ];
-    const reconnectTimers: [
-      { current: ReturnType<typeof setTimeout> | null },
-      { current: ReturnType<typeof setTimeout> | null }
-    ] = [
-      { current: null }, { current: null },
-    ];
+    const pairs = symbols.map(s => s.toUpperCase());
+    const wsRef: { current: WebSocket | null } = { current: null };
+    const reconnectTimer: { current: ReturnType<typeof setTimeout> | null } = { current: null };
     let deliberatelyClosed = false;
+    let lastWsTickAt = Date.now();
 
-    // Track last WS message time per connection to detect silently-dead sockets.
-    // Mobile OS can kill TCP without a close frame, leaving readyState=OPEN forever.
-    const lastWsTickAt: [number, number] = [Date.now(), Date.now()];
-
-    function connect(index: 0 | 1): void {
-      const url = index === 0
-        ? buildStreamUrl(SPOT_WS_URL, spotPairs, 'ticker')
-        : buildStreamUrl(FUTURES_WS_URL, futuresPairs, 'aggTrade');
-      const syms = index === 0 ? spotSymbols : futuresSymbols;
-      const rest24 = index === 0 ? SPOT_TICKER24_URL : FUTURES_TICKER24_URL;
+    function connect(): void {
+      const url = buildStreamUrl(FUTURES_WS_URL, pairs, 'aggTrade');
 
       const tickWithTimestamp: OnTick = (symbol, price, volume, change24hPct, high, low, trades) => {
-        lastWsTickAt[index] = Date.now();
+        lastWsTickAt = Date.now();
         applyTick(symbol, price, volume, change24hPct, high, low, trades);
       };
 
       const ws = openTickerStream(
         url,
         tickWithTimestamp,
-        () => void fetchTicker24h(syms, rest24, applyTick),
-        (event: CloseEvent) => {
-          wsRefs[index].current = null;
+        () => void fetchTicker24h(pairs, FUTURES_TICKER24_URL, applyTick),
+        (_event: CloseEvent) => {
+          wsRef.current = null;
           if (deliberatelyClosed) return;
-          reconnectTimers[index].current = setTimeout(() => {
-            reconnectTimers[index].current = null;
-            if (!deliberatelyClosed) connect(index);
+          reconnectTimer.current = setTimeout(() => {
+            reconnectTimer.current = null;
+            if (!deliberatelyClosed) connect();
           }, 2000);
         }
       );
-      wsRefs[index].current = ws;
+      wsRef.current = ws;
     }
 
-    // Fetch prices immediately via REST so the UI is populated before the first WS tick
-    if (spotSymbols.length > 0)    void fetchTicker24h(spotSymbols, SPOT_TICKER24_URL, applyTick);
-    if (futuresSymbols.length > 0) void fetchTicker24h(futuresSymbols, FUTURES_TICKER24_URL, applyTick);
+    void fetchTicker24h(pairs, FUTURES_TICKER24_URL, applyTick);
+    connect();
 
-    if (spotSymbols.length > 0)    connect(0);
-    if (futuresSymbols.length > 0) connect(1);
-
-    // Liveness check: if a WS is OPEN but has sent no messages for 60s, close it so
-    // the onclose handler reconnects it. Runs every 15s.
     const WS_STALE_MS = 60_000;
     const livenessId = setInterval(() => {
-      for (const index of [0, 1] as const) {
-        const ws = wsRefs[index].current;
-        if (!ws || ws.readyState !== WebSocket.OPEN) continue;
-        if (Date.now() - lastWsTickAt[index] > WS_STALE_MS) {
-          ws.close();
-        }
-      }
+      const ws = wsRef.current;
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      if (Date.now() - lastWsTickAt > WS_STALE_MS) ws.close();
     }, 15_000);
 
     function handleVisibilityChange(): void {
       if (document.visibilityState !== 'visible') return;
+      lastWsTickAt = Date.now();
+      void fetchTicker24h(pairs, FUTURES_TICKER24_URL, applyTick);
 
-      // Reset liveness timestamps so recently-reconnected sockets get a fresh window
-      lastWsTickAt[0] = Date.now();
-      lastWsTickAt[1] = Date.now();
-
-      // Serve fresh prices via REST immediately while new socket handshake completes
-      if (spotSymbols.length > 0)
-        void fetchTicker24h(spotSymbols, SPOT_TICKER24_URL, applyTick);
-      if (futuresSymbols.length > 0)
-        void fetchTicker24h(futuresSymbols, FUTURES_TICKER24_URL, applyTick);
-
-      // Reconnect any dead sockets
-      for (const index of [0, 1] as const) {
-        const ws = wsRefs[index].current;
-        const isDead = ws === null
-          || ws.readyState === WebSocket.CLOSED
-          || ws.readyState === WebSocket.CLOSING;
-        if (!isDead) continue;
-
-        // Cancel pending close-handler reconnect to prevent double-connection
-        if (reconnectTimers[index].current !== null) {
-          clearTimeout(reconnectTimers[index].current!);
-          reconnectTimers[index].current = null;
-        }
-
-        const hasSymbols = index === 0 ? spotSymbols.length > 0 : futuresSymbols.length > 0;
-        if (hasSymbols) connect(index);
+      const ws = wsRef.current;
+      const isDead = ws === null || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING;
+      if (!isDead) return;
+      if (reconnectTimer.current !== null) {
+        clearTimeout(reconnectTimer.current!);
+        reconnectTimer.current = null;
       }
+      connect();
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -254,39 +186,24 @@ export function useCryptoPrices(symbols: string[]): UseCryptoPricesResult {
     return () => {
       deliberatelyClosed = true;
       clearInterval(livenessId);
-      for (const t of reconnectTimers) {
-        if (t.current !== null) { clearTimeout(t.current); t.current = null; }
-      }
-      for (const ref of wsRefs) { ref.current?.close(); ref.current = null; }
+      if (reconnectTimer.current !== null) { clearTimeout(reconnectTimer.current); reconnectTimer.current = null; }
+      wsRef.current?.close(); wsRef.current = null;
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [symbols.join(','), futuresKey]); // eslint-disable-line
+  }, [symbols.join(',')]); // eslint-disable-line
 
-  // REST fallback: guards against silently-dead WebSockets (mobile OS kills TCP without close frame)
   useEffect(() => {
-    if (classifying) return;
-    const upper = symbols.map(s => s.toUpperCase());
-    const spotSyms = upper.filter(s => !futuresOnlySet.has(s));
-    const futuresSyms = upper.filter(s => futuresOnlySet.has(s));
-    if (spotSyms.length === 0 && futuresSyms.length === 0) return;
-
-    const spotId = spotSyms.length > 0
-      ? setInterval(() => void fetchTicker24h(spotSyms, SPOT_TICKER24_URL, applyTick), SPOT_POLL_INTERVAL_MS)
-      : null;
-    const futuresId = futuresSyms.length > 0
-      ? setInterval(() => void fetchTicker24h(futuresSyms, FUTURES_TICKER24_URL, applyTick), FUTURES_POLL_INTERVAL_MS)
-      : null;
-
-    return () => {
-      if (spotId !== null) clearInterval(spotId);
-      if (futuresId !== null) clearInterval(futuresId);
-    };
-  }, [symbols.join(','), futuresKey]); // eslint-disable-line
+    const pairs = symbols.map(s => s.toUpperCase());
+    if (pairs.length === 0) return;
+    const id = setInterval(() => void fetchTicker24h(pairs, FUTURES_TICKER24_URL, applyTick), FUTURES_POLL_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [symbols.join(',')]); // eslint-disable-line
 
   return { prices, prevPrices, volumes, change24h, high24h, low24h, trades24h, lastUpdatedAt };
 }
 
 export function getCoinIcon(symbol: string): string {
+  const base = symbol.replace(/USDT$/, '');
   const map: Record<string, string> = {
     BTC: '₿', ETH: 'Ξ', SOL: '◎', BNB: 'B', XRP: 'X', ADA: '₳',
     AVAX: 'A', DOT: '●', MATIC: 'M', LINK: '⬡', LTC: 'Ł', UNI: 'U',
@@ -296,7 +213,7 @@ export function getCoinIcon(symbol: string): string {
     EOS: 'E', MKR: 'M', GRT: 'G', PEPE: '🐸', JUP: 'J', SEI: 'S',
     TIA: 'T', WIF: '🐕', FET: 'F', RENDER: 'R', DUSK: 'D', HANA: 'H',
   };
-  return map[symbol] ?? symbol[0];
+  return map[base] ?? base[0];
 }
 
 const KNOWN_COIN_COLORS: Record<string, string> = {
@@ -323,8 +240,8 @@ function generateCoinColor(symbol: string): string {
 }
 
 export function getCoinColor(symbol: string): string {
-  return KNOWN_COIN_COLORS[symbol] ?? generateCoinColor(symbol);
+  const base = symbol.replace(/USDT$/, '');
+  return KNOWN_COIN_COLORS[base] ?? generateCoinColor(base);
 }
 
-// Keep COIN_COLORS export for any direct usages not yet migrated
 export const COIN_COLORS: Record<string, string> = KNOWN_COIN_COLORS;

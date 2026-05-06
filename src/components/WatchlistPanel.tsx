@@ -45,9 +45,9 @@ function fmtPrice(price: number | undefined): string {
 
 // Popular coins shown before API pairs load
 const POPULAR_COINS = [
-  'BTC','ETH','SOL','BNB','XRP','ADA','AVAX','DOT','MATIC','LINK',
-  'LTC','UNI','ATOM','DOGE','SUI','APT','OP','ARB','NEAR','PEPE',
-  'TRX','TON','HBAR','SHIB','FET','WIF','TIA','JUP','RENDER','SEI',
+  'BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','ADAUSDT','AVAXUSDT','DOTUSDT','MATICUSDT','LINKUSDT',
+  'LTCUSDT','UNIUSDT','ATOMUSDT','DOGEUSDT','SUIUSDT','APTUSDT','OPUSDT','ARBUSDT','NEARUSDT','PEPEUSDT',
+  'TRXUSDT','TONUSDT','HBARUSDT','SHIBUSDT','FETUSDT','WIFUSDT','TIAUSDT','JUPUSDT','RENDERUSDT','SEIUSDT',
 ];
 
 export default function WatchlistPanel({ watchlist, prices, prevPrices, change24h, volumes, high24h, low24h, trades24h, momentumRows, onAdd, onRemove, onViewChart }: Props) {
@@ -105,9 +105,10 @@ export default function WatchlistPanel({ watchlist, prices, prevPrices, change24
             <input
               ref={inputRef}
               className="watchlist-search-input"
-              placeholder={loading ? 'Loading pairs…' : 'Type to filter (e.g. BTC)'}
+              placeholder={loading ? 'Loading pairs… or press Enter to add' : 'Type to filter or press Enter to add'}
               value={search}
               onChange={e => setSearch(e.target.value.toUpperCase())}
+              onKeyDown={e => { if (e.key === 'Enter' && search.trim()) handleSelect(search.trim()); }}
             />
             <button className="btn-icon" onClick={cancelAdd} title="Cancel">✕</button>
           </div>

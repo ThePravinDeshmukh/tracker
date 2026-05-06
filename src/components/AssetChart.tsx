@@ -120,7 +120,7 @@ export default function AssetChart({ symbol, avgPrice, stopLoss, livePrice, live
               {icon}
             </div>
             <div>
-              <div className="chart-title-symbol">{symbol}/USDT</div>
+              <div className="chart-title-symbol">{symbol.replace(/USDT$/, '')}/USDT</div>
               <div className="chart-title-price">
                 {livePrice !== undefined && `$${fmtPrice(livePrice)}`}
                 {liveVolume !== undefined && (
