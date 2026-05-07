@@ -84,6 +84,8 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
   const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
   const initializedRef = useRef(false);
+  // lightweight-charts requires setData([bar]) before update() works on an empty series
+  const hasInitialBarRef = useRef(false);
 
   const [hoveredOhlcv, setHoveredOhlcv] = useState<OhlcvInfo | null>(null);
 
@@ -201,6 +203,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
       candleSeriesRef.current = null;
       volumeSeriesRef.current = null;
       initializedRef.current = false;
+      hasInitialBarRef.current = false;
     };
   }, []); // eslint-disable-line
 
@@ -246,9 +249,10 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     if (!series || !volSeries) return;
 
     if (interval === '1s') {
-      // Clear for fresh 1s candles
+      // Clear for fresh 1s candles; first candleUpdate will use setData([bar])
       series.setData([]);
       volSeries.setData([]);
+      hasInitialBarRef.current = false;
       initializedRef.current = true;
       return;
     }
@@ -258,20 +262,31 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     series.setData(initialCandles.map(candleToCandlestickData));
     volSeries.setData(initialCandles.map(candleToHistogramData));
     chartRef.current?.timeScale().fitContent();
+    hasInitialBarRef.current = true;
     initializedRef.current = true;
   }, [initialCandles, interval]);
 
   // Apply live candle updates
   useEffect(() => {
-    if (!candleUpdate || !candleSeriesRef.current || !volumeSeriesRef.current) return;
+    const series = candleSeriesRef.current;
+    const volSeries = volumeSeriesRef.current;
+    if (!candleUpdate || !series || !volSeries) return;
     if (!initializedRef.current) return;
 
-    candleSeriesRef.current.update(candleToCandlestickData(candleUpdate));
-    volumeSeriesRef.current.update(candleToHistogramData(candleUpdate));
+    if (!hasInitialBarRef.current) {
+      // series.update() silently fails on a completely empty series — seed it first
+      series.setData([candleToCandlestickData(candleUpdate)]);
+      volSeries.setData([candleToHistogramData(candleUpdate)]);
+      hasInitialBarRef.current = true;
+    } else {
+      series.update(candleToCandlestickData(candleUpdate));
+      volSeries.update(candleToHistogramData(candleUpdate));
+    }
   }, [candleUpdate]);
 
   const handleIntervalChange = useCallback((newInterval: CandleInterval) => {
     initializedRef.current = false;
+    hasInitialBarRef.current = false;
     setInterval(newInterval);
   }, []);
 
