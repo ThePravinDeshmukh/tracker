@@ -7,7 +7,7 @@ import HoldingRow from './components/HoldingRow';
 import AddEditModal from './components/AddEditModal';
 import WatchlistPanel from './components/WatchlistPanel';
 import { Holding, EnrichedHolding, SortKey, TradeType } from './types';
-import AssetChart from './components/AssetChart';
+import LiveCandlestickChart from './components/LiveCandlestickChart';
 import CloseTradeModal from './components/CloseTradeModal';
 import AddToPositionModal from './components/AddToPositionModal';
 import { useMomentum } from './hooks/useMomentum';
@@ -237,12 +237,11 @@ export default function App() {
       )}
 
       {chartSymbol && (
-        <AssetChart
+        <LiveCandlestickChart
           symbol={chartSymbol}
           avgPrice={holdings.find(h => h.symbol === chartSymbol)?.avgPrice}
           stopLoss={holdings.find(h => h.symbol === chartSymbol)?.stopLoss}
           livePrice={prices[chartSymbol]}
-          liveVolume={volumes[chartSymbol]}
           onClose={handleCloseChart}
         />
       )}
