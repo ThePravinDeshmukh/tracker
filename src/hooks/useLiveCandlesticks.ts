@@ -3,6 +3,7 @@ import { CandlePoint, CandleInterval } from '../types';
 
 const FUTURES_WS_BASE = 'wss://fstream.binance.com/ws';
 const FUTURES_KLINE_URL = 'https://fapi.binance.com/fapi/v1/klines';
+const SPOT_KLINE_URL = 'https://api.binance.com/api/v3/klines';
 
 const KLINE_LIMITS: Record<CandleInterval, number> = {
   '1s': 0,
@@ -156,25 +157,36 @@ export function useLiveCandlesticks(
       connectAggTradeStream();
     } else {
       const limit = KLINE_LIMITS[interval];
-      const url = `${FUTURES_KLINE_URL}?symbol=${pair}&interval=${interval}&limit=${limit}`;
+      const qs = `?symbol=${pair}&interval=${interval}&limit=${limit}`;
       let cancelled = false;
 
-      fetch(url)
-        .then(res => {
+      const loadKlines = async (): Promise<void> => {
+        // Try Futures REST first, fall back to Spot REST if unreachable
+        let raw: RawKline[] | null = null;
+        try {
+          const res = await fetch(`${FUTURES_KLINE_URL}${qs}`);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return res.json() as Promise<RawKline[]>;
-        })
-        .then(raw => {
-          if (cancelled) return;
+          raw = await res.json() as RawKline[];
+        } catch {
+          try {
+            const res = await fetch(`${SPOT_KLINE_URL}${qs}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            raw = await res.json() as RawKline[];
+          } catch (spotErr) {
+            if (!cancelled) setError('Historical data unavailable — showing live only');
+          }
+        }
+        if (!cancelled && raw) {
           setInitialCandles(parseKlines(raw));
+        }
+        if (!cancelled) {
           setLoading(false);
+          // Always connect the live stream, even if historical load failed
           connectKlineStream();
-        })
-        .catch(err => {
-          if (cancelled) return;
-          setError((err as Error).message ?? 'Failed to load history');
-          setLoading(false);
-        });
+        }
+      }
+
+      void loadKlines();
 
       return () => {
         cancelled = true;
