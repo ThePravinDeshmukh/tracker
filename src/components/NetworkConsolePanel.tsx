@@ -6,20 +6,6 @@ interface Props {
   onClear: () => void;
 }
 
-function abbreviateUrl(url: string): string {
-  try {
-    const parsed = new URL(url);
-    const firstParam = parsed.searchParams.entries().next();
-    const paramStr = firstParam.done
-      ? ''
-      : `?${firstParam.value[0]}=…`;
-    const combined = `${parsed.host}${parsed.pathname}${paramStr}`;
-    return combined.length > 60 ? `${combined.slice(0, 57)}…` : combined;
-  } catch {
-    return url.length > 60 ? `${url.slice(0, 57)}…` : url;
-  }
-}
-
 function getStatusClass(entry: NetworkEntry): string {
   if (entry.method === 'WS') {
     if (entry.status === 'LIVE' || entry.status === 'CONNECTING') return 'nc-status--ws';
@@ -101,7 +87,7 @@ export default function NetworkConsolePanel({ entries, onClear }: Props) {
                     {entry.method}
                   </span>
                   <span className="nc-url" title={entry.url}>
-                    {abbreviateUrl(entry.url)}
+                    {entry.url}
                   </span>
                   <span className={`nc-status ${getStatusClass(entry)}`}>
                     {formatStatus(entry)}
