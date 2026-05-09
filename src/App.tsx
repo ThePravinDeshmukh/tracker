@@ -6,6 +6,7 @@ import { useCryptoPrices } from './hooks/useCryptoPrices';
 import HoldingRow from './components/HoldingRow';
 import AddEditModal from './components/AddEditModal';
 import WatchlistPanel from './components/WatchlistPanel';
+import TradeHistoryPanel from './components/TradeHistoryPanel';
 import { Holding, EnrichedHolding, SortKey, TradeType } from './types';
 import LiveCandlestickChart from './components/LiveCandlestickChart';
 import CloseTradeModal from './components/CloseTradeModal';
@@ -14,7 +15,8 @@ import { useMomentum } from './hooks/useMomentum';
 import MarketPulseSidebar from './components/MarketPulseSidebar';
 import { useNetworkLog } from './hooks/useNetworkLog';
 import NetworkConsolePanel from './components/NetworkConsolePanel';
-type ActiveTab = 'holdings' | 'watchlist';
+import { useTradeHistory } from './hooks/useTradeHistory';
+type ActiveTab = 'holdings' | 'watchlist' | 'history';
 
 
 function fmt(n: number | undefined, decimals = 2): string {
@@ -46,6 +48,7 @@ function sortHoldings(holdings: EnrichedHolding[], sortBy: SortKey): EnrichedHol
 export default function App() {
   const { holdings, addOrUpdateHolding, addToHolding, removeHolding } = usePortfolio();
   const { watchlist, addToWatchlist, removeFromWatchlist } = useWatchlist();
+  const { trades, addTrade, clearHistory } = useTradeHistory();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => holdings.length === 0 ? 'watchlist' : 'holdings');
   const [showModal, setShowModal] = useState(false);
@@ -88,6 +91,19 @@ export default function App() {
   const handleCloseChart = (): void => setChartSymbol(null);
   const handleOpenCloseTrade = (holding: Holding): void => setCloseTradeTarget(holding);
   const handleCloseTradeModal = (): void => setCloseTradeTarget(null);
+
+  const handleConfirmCloseTrade = (symbol: string, closePrice: number): void => {
+    const h = closeTradeTarget!;
+    const isShort = h.type === 'short';
+    const invested = h.avgPrice * h.qty;
+    const closeValue = closePrice * h.qty;
+    const pnl = isShort ? invested - closeValue : closeValue - invested;
+    const pnlPct = invested > 0 ? (pnl / invested) * 100 : 0;
+    addTrade({ symbol, side: h.type ?? 'long', qty: h.qty, entryPrice: h.avgPrice, closePrice, pnl, pnlPct, closedAt: Date.now() });
+    removeHolding(symbol);
+    setCloseTradeTarget(null);
+  };
+
   const handleAddTo = (holding: Holding): void => setAddToTarget(holding);
   const handleCloseAddTo = (): void => setAddToTarget(null);
 
@@ -188,6 +204,11 @@ export default function App() {
             />
           )}
 
+          {/* History tab */}
+          {activeTab === 'history' && (
+            <TradeHistoryPanel trades={trades} onClear={clearHistory} />
+          )}
+
         </div>
       </main>
 
@@ -223,7 +244,7 @@ export default function App() {
         <CloseTradeModal
           holding={closeTradeTarget}
           livePrice={prices[closeTradeTarget.symbol]}
-          onConfirm={removeHolding}
+          onConfirm={handleConfirmCloseTrade}
           onClose={handleCloseTradeModal}
         />
       )}
@@ -260,6 +281,13 @@ export default function App() {
         >
           Watchlist
           {watchlist.length > 0 && <span className="tab-count">{watchlist.length}</span>}
+        </button>
+        <button
+          className={`bottom-nav-btn${activeTab === 'history' ? ' active' : ''}`}
+          onClick={() => setActiveTab('history')}
+        >
+          History
+          {trades.length > 0 && <span className="tab-count">{trades.length}</span>}
         </button>
       </nav>
 

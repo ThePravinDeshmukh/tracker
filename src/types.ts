@@ -101,3 +101,17 @@ export interface CandlePoint {
 }
 
 export type CandleInterval = '1s' | '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d';
+
+// --- Trade History ---
+
+export interface ClosedTrade {
+  id: string;
+  symbol: string;
+  side: 'long' | 'short';
+  qty: number;
+  entryPrice: number;
+  closePrice: number;
+  pnl: number;
+  pnlPct: number;
+  closedAt: number; // unix ms
+}

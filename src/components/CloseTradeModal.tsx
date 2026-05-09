@@ -5,7 +5,7 @@ import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
 interface Props {
   holding: Holding;
   livePrice: number | undefined;
-  onConfirm: (symbol: string) => void;
+  onConfirm: (symbol: string, closePrice: number) => void;
   onClose: () => void;
 }
 
@@ -56,7 +56,7 @@ export default function CloseTradeModal({ holding, livePrice, onConfirm, onClose
   };
 
   const handleConfirm = (): void => {
-    onConfirm(symbol);
+    onConfirm(symbol, closePrice);
     onClose();
   };
 
