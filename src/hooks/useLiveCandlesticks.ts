@@ -42,6 +42,7 @@ function parseKlines(raw: RawKline[]): CandlePoint[] {
 export function useLiveCandlesticks(
   symbol: string | null,
   interval: CandleInterval,
+  reloadKey: number = 0,
 ): UseLiveCandlesticksResult {
   const [initialCandles, setInitialCandles] = useState<CandlePoint[]>([]);
   const [candleUpdate, setCandleUpdate] = useState<CandlePoint | null>(null);
@@ -201,7 +202,7 @@ export function useLiveCandlesticks(
       if (reconnectTimer !== null) { clearTimeout(reconnectTimer); }
       wsRef?.close();
     };
-  }, [symbol, interval]); // eslint-disable-line
+  }, [symbol, interval, reloadKey]); // eslint-disable-line
 
   return { initialCandles, candleUpdate, loading, error };
 }

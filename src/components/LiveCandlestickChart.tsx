@@ -130,7 +130,8 @@ function makeMASeries(chart: IChartApi, color: string): ISeriesApi<'Line'> {
 
 export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, livePrice, onClose }: Props) {
   const [interval, setInterval] = useState<CandleInterval>('1m');
-  const { initialCandles, candleUpdate, loading, error } = useLiveCandlesticks(symbol, interval);
+  const [reloadKey, setReloadKey] = useState(0);
+  const { initialCandles, candleUpdate, loading, error } = useLiveCandlesticks(symbol, interval, reloadKey);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -422,6 +423,19 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     setInterval(newInterval);
   }, []);
 
+  const handleRefresh = useCallback(() => {
+    initializedRef.current = false;
+    hasInitialBarRef.current = false;
+    closesRef.current = [];
+    candleSeriesRef.current?.setData([]);
+    volumeSeriesRef.current?.setData([]);
+    ema9SeriesRef.current?.setData([]);
+    ema21SeriesRef.current?.setData([]);
+    sma50SeriesRef.current?.setData([]);
+    sma200SeriesRef.current?.setData([]);
+    setReloadKey(k => k + 1);
+  }, []);
+
   // Determine displayed OHLCV: hovered candle or latest update
   const displayOhlcv: OhlcvInfo | null = hoveredOhlcv ?? (candleUpdate
     ? { open: candleUpdate.open, high: candleUpdate.high, low: candleUpdate.low, close: candleUpdate.close, volume: candleUpdate.volume }
@@ -449,6 +463,15 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
           </div>
         )}
 
+        <button
+          className="live-chart-close"
+          onClick={handleRefresh}
+          title="Refresh"
+          disabled={loading}
+          style={{ marginRight: 8 }}
+        >
+          ⟳
+        </button>
         <button className="live-chart-close" onClick={onClose} title="Close">✕</button>
       </div>
 
