@@ -12,6 +12,7 @@ import {
 import { CandleInterval, CandlePoint } from '../types';
 import { useLiveCandlesticks } from '../hooks/useLiveCandlesticks';
 import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
+import { calcEMA, calcSMA, calcLastEMA, calcLastSMA, MAPoint } from '../utils/indicators';
 
 interface Props {
   symbol: string;
@@ -27,6 +28,11 @@ interface OhlcvInfo {
   low: number;
   close: number;
   volume: number;
+}
+
+interface CloseSample {
+  time: UTCTimestamp;
+  close: number;
 }
 
 const TIMEFRAMES: { key: CandleInterval; label: string }[] = [
@@ -48,7 +54,44 @@ const CHART_BG = '#0b0e11';
 const CHART_SURFACE = '#161A1E';
 const CHART_BORDER = '#1E2329';
 const CHART_TEXT = '#848E9C';
-const BINANCE_YELLOW = '#F0B90B';
+
+const MA_EMA9_COLOR = '#F0B90B';
+const MA_EMA21_COLOR = '#4CAF50';
+const MA_SMA50_COLOR = '#A855F7';
+const MA_SMA200_COLOR = '#F6465D';
+
+const IST_TZ = 'Asia/Kolkata';
+
+function toIstDate(time: UTCTimestamp): Date {
+  return new Date((time as number) * 1000);
+}
+
+function formatIstTick(time: UTCTimestamp, secondsVisible: boolean, dateOnly: boolean): string {
+  const d = toIstDate(time);
+  if (dateOnly) {
+    return d.toLocaleDateString('en-GB', { timeZone: IST_TZ, day: '2-digit', month: 'short' });
+  }
+  return d.toLocaleTimeString('en-GB', {
+    timeZone: IST_TZ,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: secondsVisible ? '2-digit' : undefined,
+    hour12: false,
+  });
+}
+
+function formatIstCrosshair(time: UTCTimestamp, secondsVisible: boolean): string {
+  const d = toIstDate(time);
+  const date = d.toLocaleDateString('en-GB', { timeZone: IST_TZ, day: '2-digit', month: 'short', year: 'numeric' });
+  const t = d.toLocaleTimeString('en-GB', {
+    timeZone: IST_TZ,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: secondsVisible ? '2-digit' : undefined,
+    hour12: false,
+  });
+  return `${date} ${t} IST`;
+}
 
 function fmtPrice(n: number): string {
   if (n >= 1000) return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -75,6 +118,16 @@ function candleToHistogramData(c: CandlePoint) {
   };
 }
 
+function makeMASeries(chart: IChartApi, color: string): ISeriesApi<'Line'> {
+  return chart.addLineSeries({
+    color,
+    lineWidth: 1,
+    crosshairMarkerVisible: false,
+    priceLineVisible: false,
+    lastValueVisible: false,
+  });
+}
+
 export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, livePrice, onClose }: Props) {
   const [interval, setInterval] = useState<CandleInterval>('1m');
   const { initialCandles, candleUpdate, loading, error } = useLiveCandlesticks(symbol, interval);
@@ -83,9 +136,16 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
   const chartRef = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
+  const ema9SeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const ema21SeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const sma50SeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const sma200SeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+
   const initializedRef = useRef(false);
   // lightweight-charts requires setData([bar]) before update() works on an empty series
   const hasInitialBarRef = useRef(false);
+  // accumulates all close prices for MA computation across initial + live data
+  const closesRef = useRef<CloseSample[]>([]);
 
   const [hoveredOhlcv, setHoveredOhlcv] = useState<OhlcvInfo | null>(null);
 
@@ -104,6 +164,10 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
         textColor: CHART_TEXT,
         fontFamily: "'Space Mono', monospace",
         fontSize: 11,
+      },
+      localization: {
+        timeFormatter: (time: UTCTimestamp) =>
+          formatIstCrosshair(time, true),
       },
       grid: {
         vertLines: { color: CHART_BORDER },
@@ -132,6 +196,8 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
         borderColor: CHART_BORDER,
         timeVisible: true,
         secondsVisible: false,
+        tickMarkFormatter: (time: UTCTimestamp) =>
+          formatIstTick(time, false, false),
       },
       handleScroll: true,
       handleScale: true,
@@ -159,6 +225,11 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     chart.priceScale('volume').applyOptions({
       scaleMargins: { top: 0.78, bottom: 0 },
     });
+
+    ema9SeriesRef.current = makeMASeries(chart, MA_EMA9_COLOR);
+    ema21SeriesRef.current = makeMASeries(chart, MA_EMA21_COLOR);
+    sma50SeriesRef.current = makeMASeries(chart, MA_SMA50_COLOR);
+    sma200SeriesRef.current = makeMASeries(chart, MA_SMA200_COLOR);
 
     // Subscribe to crosshair for OHLCV info bar
     chart.subscribeCrosshairMove((param: MouseEventParams) => {
@@ -202,16 +273,33 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
       chartRef.current = null;
       candleSeriesRef.current = null;
       volumeSeriesRef.current = null;
+      ema9SeriesRef.current = null;
+      ema21SeriesRef.current = null;
+      sma50SeriesRef.current = null;
+      sma200SeriesRef.current = null;
       initializedRef.current = false;
       hasInitialBarRef.current = false;
+      closesRef.current = [];
     };
   }, []); // eslint-disable-line
 
   // Update timeScale options when interval changes
   useEffect(() => {
+    const secondsVisible = interval === '1s';
+    const dateOnly = interval === '1d';
     chartRef.current?.timeScale().applyOptions({
-      timeVisible: interval !== '1d',
-      secondsVisible: interval === '1s',
+      timeVisible: !dateOnly,
+      secondsVisible,
+    });
+    chartRef.current?.applyOptions({
+      timeScale: {
+        tickMarkFormatter: (time: UTCTimestamp) =>
+          formatIstTick(time, secondsVisible, dateOnly),
+      },
+      localization: {
+        timeFormatter: (time: UTCTimestamp) =>
+          formatIstCrosshair(time, secondsVisible),
+      },
     });
   }, [interval]);
 
@@ -242,47 +330,91 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     }
   }, [avgPrice, stopLoss]); // eslint-disable-line
 
-  // Load initial historical data
+  // Load initial historical data and compute MAs
   useEffect(() => {
     const series = candleSeriesRef.current;
     const volSeries = volumeSeriesRef.current;
     if (!series || !volSeries) return;
 
     if (interval === '1s') {
-      // Clear for fresh 1s candles; first candleUpdate will use setData([bar])
       series.setData([]);
       volSeries.setData([]);
+      ema9SeriesRef.current?.setData([]);
+      ema21SeriesRef.current?.setData([]);
+      sma50SeriesRef.current?.setData([]);
+      sma200SeriesRef.current?.setData([]);
+      closesRef.current = [];
       hasInitialBarRef.current = false;
       initializedRef.current = true;
       return;
     }
 
-    if (initialCandles.length === 0) return;
+    if (initialCandles.length === 0) {
+      closesRef.current = [];
+      return;
+    }
 
     series.setData(initialCandles.map(candleToCandlestickData));
     volSeries.setData(initialCandles.map(candleToHistogramData));
     chartRef.current?.timeScale().fitContent();
     hasInitialBarRef.current = true;
     initializedRef.current = true;
+
+    const closes: CloseSample[] = initialCandles.map(c => ({ time: c.time as UTCTimestamp, close: c.close }));
+    closesRef.current = closes;
+
+    ema9SeriesRef.current?.setData(calcEMA(closes, 9) as MAPoint[]);
+    ema21SeriesRef.current?.setData(calcEMA(closes, 21) as MAPoint[]);
+    sma50SeriesRef.current?.setData(calcSMA(closes, 50) as MAPoint[]);
+    sma200SeriesRef.current?.setData(calcSMA(closes, 200) as MAPoint[]);
   }, [initialCandles, interval]);
 
-  // Apply live candle updates
+  // Apply live candle updates and update MA last values
   useEffect(() => {
     const series = candleSeriesRef.current;
     const volSeries = volumeSeriesRef.current;
     if (!candleUpdate || !series || !volSeries) return;
     if (!initializedRef.current) return;
 
+    const t = candleUpdate.time as UTCTimestamp;
+
+    // Maintain closes array for incremental MA computation
+    const closes = closesRef.current;
+    if (closes.length > 0 && closes[closes.length - 1].time === t) {
+      closes[closes.length - 1] = { time: t, close: candleUpdate.close };
+    } else {
+      closes.push({ time: t, close: candleUpdate.close });
+    }
+
+    // Update MA series with latest computed value
+    const lastEma9 = calcLastEMA(closes, 9);
+    const lastEma21 = calcLastEMA(closes, 21);
+    const lastSma50 = calcLastSMA(closes, 50);
+    const lastSma200 = calcLastSMA(closes, 200);
+    if (lastEma9 !== null) ema9SeriesRef.current?.update({ time: t, value: lastEma9 });
+    if (lastEma21 !== null) ema21SeriesRef.current?.update({ time: t, value: lastEma21 });
+    if (lastSma50 !== null) sma50SeriesRef.current?.update({ time: t, value: lastSma50 });
+    if (lastSma200 !== null) sma200SeriesRef.current?.update({ time: t, value: lastSma200 });
+
     if (!hasInitialBarRef.current) {
       // series.update() silently fails on a completely empty series — seed it first
       series.setData([candleToCandlestickData(candleUpdate)]);
       volSeries.setData([candleToHistogramData(candleUpdate)]);
       hasInitialBarRef.current = true;
+      if (interval === '1s') {
+        // Visible range is still from a previous timeframe — 1s bars are sub-pixel width.
+        // Reset to a 65-second window so the bar is actually visible.
+        const now = candleUpdate.time;
+        chartRef.current?.timeScale().setVisibleRange({
+          from: (now - 60) as UTCTimestamp,
+          to: (now + 5) as UTCTimestamp,
+        });
+      }
     } else {
       series.update(candleToCandlestickData(candleUpdate));
       volSeries.update(candleToHistogramData(candleUpdate));
     }
-  }, [candleUpdate]);
+  }, [candleUpdate]); // eslint-disable-line
 
   const handleIntervalChange = useCallback((newInterval: CandleInterval) => {
     initializedRef.current = false;
@@ -333,7 +465,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
         ))}
       </div>
 
-      {/* OHLCV info bar */}
+      {/* OHLCV info bar + MA legend */}
       <div className="live-chart-ohlcv-bar">
         {displayOhlcv ? (
           <>
@@ -353,6 +485,12 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
             {loading ? 'Loading…' : error ? `Error: ${error}` : ''}
           </span>
         )}
+        <span className="live-chart-ma-legend">
+          <span style={{ color: MA_EMA9_COLOR }}>EMA9</span>
+          <span style={{ color: MA_EMA21_COLOR }}>EMA21</span>
+          <span style={{ color: MA_SMA50_COLOR }}>SMA50</span>
+          <span style={{ color: MA_SMA200_COLOR }}>SMA200</span>
+        </span>
       </div>
 
       {/* Chart canvas area */}

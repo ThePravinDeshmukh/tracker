@@ -1921,6 +1921,14 @@
   min-height: 28px;
 }
 
+.live-chart-ma-legend {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+  font-size: 10px;
+  opacity: 0.8;
+}
+
 .live-chart-container {
   flex: 1;
   position: relative;

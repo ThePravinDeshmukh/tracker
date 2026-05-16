@@ -7,13 +7,13 @@ const SPOT_KLINE_URL = 'https://api.binance.com/api/v3/klines';
 
 const KLINE_LIMITS: Record<CandleInterval, number> = {
   '1s': 0,
-  '1m': 200,
-  '5m': 200,
-  '15m': 150,
-  '30m': 100,
-  '1h': 100,
-  '4h': 100,
-  '1d': 100,
+  '1m': 300,
+  '5m': 300,
+  '15m': 300,
+  '30m': 300,
+  '1h': 300,
+  '4h': 300,
+  '1d': 300,
 };
 
 const MAX_1S_CANDLES = 300;

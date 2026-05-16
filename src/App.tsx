@@ -19,6 +19,12 @@ import { useTradeHistory } from './hooks/useTradeHistory';
 type ActiveTab = 'holdings' | 'watchlist' | 'history';
 
 
+function fmtTitlePrice(price: number): string {
+  if (price >= 100) return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (price >= 1) return price.toFixed(4);
+  return price.toFixed(6);
+}
+
 function fmt(n: number | undefined, decimals = 2): string {
   if (n === undefined || isNaN(n)) return '—';
   return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
@@ -82,6 +88,19 @@ export default function App() {
     const totalPct = totalInvested > 0 ? (totalPnl / totalInvested) * 100 : 0;
     return { totalPnl, totalPct };
   }, [enriched]);
+
+  const chartLivePrice = chartSymbol ? prices[chartSymbol] : undefined;
+  useEffect(() => {
+    if (!chartSymbol) {
+      document.title = 'Crypto Tracker';
+      return () => { document.title = 'Crypto Tracker'; };
+    }
+    const base = chartSymbol.replace(/USDT$/, '');
+    document.title = chartLivePrice !== undefined
+      ? `${base} $${fmtTitlePrice(chartLivePrice)} | Crypto Tracker`
+      : `${base} | Crypto Tracker`;
+    return () => { document.title = 'Crypto Tracker'; };
+  }, [chartSymbol, chartLivePrice]);
 
   const handleOpenBuy = (): void => { setModalTradeType('long'); setEditTarget(null); setShowModal(true); };
   const handleOpenShort = (): void => { setModalTradeType('short'); setEditTarget(null); setShowModal(true); };
