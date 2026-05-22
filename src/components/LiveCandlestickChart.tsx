@@ -94,9 +94,16 @@ function formatIstCrosshair(time: UTCTimestamp, secondsVisible: boolean): string
 }
 
 function fmtPrice(n: number): string {
-  if (n >= 1000) return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  if (n >= 1) return n.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
-  return n.toLocaleString('en-US', { minimumFractionDigits: 6, maximumFractionDigits: 6 });
+  return n.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+}
+
+function candleOpenTime(nowMs: number, iv: CandleInterval): number {
+  const s = Math.floor(nowMs / 1000);
+  const periods: Record<CandleInterval, number> = {
+    '1s': 1, '1m': 60, '5m': 300, '15m': 900,
+    '30m': 1800, '1h': 3600, '4h': 14400, '1d': 86400,
+  };
+  return s - (s % periods[iv]);
 }
 
 function fmtVolume(n: number): string {
@@ -147,6 +154,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
   const hasInitialBarRef = useRef(false);
   // accumulates all close prices for MA computation across initial + live data
   const closesRef = useRef<CloseSample[]>([]);
+  const currentCandleRef = useRef<CandlePoint | null>(null);
 
   const [hoveredOhlcv, setHoveredOhlcv] = useState<OhlcvInfo | null>(null);
 
@@ -281,6 +289,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
       initializedRef.current = false;
       hasInitialBarRef.current = false;
       closesRef.current = [];
+      currentCandleRef.current = null;
     };
   }, []); // eslint-disable-line
 
@@ -352,6 +361,8 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
 
     if (initialCandles.length === 0) {
       closesRef.current = [];
+      // REST finished with no data — still allow kline WS updates to flow through
+      if (!loading) initializedRef.current = true;
       return;
     }
 
@@ -360,6 +371,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     chartRef.current?.timeScale().fitContent();
     hasInitialBarRef.current = true;
     initializedRef.current = true;
+    currentCandleRef.current = initialCandles[initialCandles.length - 1];
 
     const closes: CloseSample[] = initialCandles.map(c => ({ time: c.time as UTCTimestamp, close: c.close }));
     closesRef.current = closes;
@@ -368,7 +380,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     ema21SeriesRef.current?.setData(calcEMA(closes, 21) as MAPoint[]);
     sma50SeriesRef.current?.setData(calcSMA(closes, 50) as MAPoint[]);
     sma200SeriesRef.current?.setData(calcSMA(closes, 200) as MAPoint[]);
-  }, [initialCandles, interval]);
+  }, [initialCandles, interval, loading]);
 
   // Apply live candle updates and update MA last values
   useEffect(() => {
@@ -378,6 +390,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     if (!initializedRef.current) return;
 
     const t = candleUpdate.time as UTCTimestamp;
+    currentCandleRef.current = { ...candleUpdate };
 
     // Maintain closes array for incremental MA computation
     const closes = closesRef.current;
@@ -417,9 +430,44 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     }
   }, [candleUpdate]); // eslint-disable-line
 
+  // Drive the forming candle from the aggTrade price feed so the chart ticks in
+  // real-time even when the kline WS is throttled or hasn't delivered an update yet.
+  useEffect(() => {
+    if (livePrice === undefined || !initializedRef.current) return;
+    const series = candleSeriesRef.current;
+    const volSeries = volumeSeriesRef.current;
+    if (!series || !volSeries) return;
+
+    const current = currentCandleRef.current;
+    if (!current) return;
+
+    const candleTime = candleOpenTime(Date.now(), interval) as UTCTimestamp;
+    let updated: CandlePoint;
+    if (current.time === candleTime) {
+      updated = {
+        ...current,
+        close: livePrice,
+        high: Math.max(current.high, livePrice),
+        low: Math.min(current.low, livePrice),
+      };
+    } else {
+      updated = { time: candleTime, open: livePrice, high: livePrice, low: livePrice, close: livePrice, volume: 0 };
+    }
+    currentCandleRef.current = updated;
+
+    if (!hasInitialBarRef.current) {
+      series.setData([candleToCandlestickData(updated)]);
+      volSeries.setData([candleToHistogramData(updated)]);
+      hasInitialBarRef.current = true;
+    } else {
+      series.update(candleToCandlestickData(updated));
+    }
+  }, [livePrice]); // eslint-disable-line
+
   const handleIntervalChange = useCallback((newInterval: CandleInterval) => {
     initializedRef.current = false;
     hasInitialBarRef.current = false;
+    currentCandleRef.current = null;
     setInterval(newInterval);
   }, []);
 
@@ -427,6 +475,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     initializedRef.current = false;
     hasInitialBarRef.current = false;
     closesRef.current = [];
+    currentCandleRef.current = null;
     candleSeriesRef.current?.setData([]);
     volumeSeriesRef.current?.setData([]);
     ema9SeriesRef.current?.setData([]);
