@@ -224,6 +224,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
       priceLineColor: CHART_TEXT,
       priceLineStyle: LineStyle.Dashed,
       lastValueVisible: true,
+      priceFormat: { type: 'price', precision: 4, minMove: 0.0001 },
     });
 
     const volumeSeries = chart.addHistogramSeries({
