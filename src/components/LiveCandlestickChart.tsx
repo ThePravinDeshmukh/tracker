@@ -94,7 +94,7 @@ function formatIstCrosshair(time: UTCTimestamp, secondsVisible: boolean): string
 }
 
 function fmtPrice(n: number): string {
-  return n.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+  return n.toLocaleString('en-US', { minimumFractionDigits: 6, maximumFractionDigits: 6 });
 }
 
 function candleOpenTime(nowMs: number, iv: CandleInterval): number {
@@ -227,7 +227,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
       priceLineColor: CHART_TEXT,
       priceLineStyle: LineStyle.Dashed,
       lastValueVisible: true,
-      priceFormat: { type: 'price', precision: 4, minMove: 0.0001 },
+      priceFormat: { type: 'price', precision: 6, minMove: 0.000001 },
     });
 
     const volumeSeries = chart.addHistogramSeries({
