@@ -155,6 +155,9 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
   // accumulates all close prices for MA computation across initial + live data
   const closesRef = useRef<CloseSample[]>([]);
   const currentCandleRef = useRef<CandlePoint | null>(null);
+  // tracks the interval for which initialCandles was last applied — prevents stale
+  // data from a previous interval being loaded when interval changes mid-flight
+  const appliedIntervalRef = useRef<CandleInterval | null>(null);
 
   const [hoveredOhlcv, setHoveredOhlcv] = useState<OhlcvInfo | null>(null);
 
@@ -291,6 +294,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
       hasInitialBarRef.current = false;
       closesRef.current = [];
       currentCandleRef.current = null;
+      appliedIntervalRef.current = null;
     };
   }, []); // eslint-disable-line
 
@@ -347,6 +351,14 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     const volSeries = volumeSeriesRef.current;
     if (!series || !volSeries) return;
 
+    // When interval changes, initialCandles still holds data from the previous interval
+    // for one render cycle (the hook's reset hasn't propagated yet). Skip that stale
+    // firing to prevent loading wrong-interval data — and the out-of-order time errors
+    // that follow when the livePrice effect tries to update against those stale bars.
+    if (appliedIntervalRef.current !== null && appliedIntervalRef.current !== interval) {
+      return;
+    }
+
     if (interval === '1s') {
       series.setData([]);
       volSeries.setData([]);
@@ -357,13 +369,17 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
       closesRef.current = [];
       hasInitialBarRef.current = false;
       initializedRef.current = true;
+      appliedIntervalRef.current = interval;
       return;
     }
 
     if (initialCandles.length === 0) {
       closesRef.current = [];
       // REST finished with no data — still allow kline WS updates to flow through
-      if (!loading) initializedRef.current = true;
+      if (!loading) {
+        initializedRef.current = true;
+        appliedIntervalRef.current = interval;
+      }
       return;
     }
 
@@ -372,6 +388,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     chartRef.current?.timeScale().fitContent();
     hasInitialBarRef.current = true;
     initializedRef.current = true;
+    appliedIntervalRef.current = interval;
     currentCandleRef.current = initialCandles[initialCandles.length - 1];
 
     const closes: CloseSample[] = initialCandles.map(c => ({ time: c.time as UTCTimestamp, close: c.close }));
@@ -469,6 +486,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     initializedRef.current = false;
     hasInitialBarRef.current = false;
     currentCandleRef.current = null;
+    appliedIntervalRef.current = null;
     setInterval(newInterval);
   }, []);
 
@@ -477,6 +495,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     hasInitialBarRef.current = false;
     closesRef.current = [];
     currentCandleRef.current = null;
+    appliedIntervalRef.current = null;
     candleSeriesRef.current?.setData([]);
     volumeSeriesRef.current?.setData([]);
     ema9SeriesRef.current?.setData([]);
