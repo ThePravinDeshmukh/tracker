@@ -155,9 +155,6 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
   // accumulates all close prices for MA computation across initial + live data
   const closesRef = useRef<CloseSample[]>([]);
   const currentCandleRef = useRef<CandlePoint | null>(null);
-  // tracks the interval for which initialCandles was last applied — prevents stale
-  // data from a previous interval being loaded when interval changes mid-flight
-  const appliedIntervalRef = useRef<CandleInterval | null>(null);
 
   const [hoveredOhlcv, setHoveredOhlcv] = useState<OhlcvInfo | null>(null);
 
@@ -294,7 +291,6 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
       hasInitialBarRef.current = false;
       closesRef.current = [];
       currentCandleRef.current = null;
-      appliedIntervalRef.current = null;
     };
   }, []); // eslint-disable-line
 
@@ -345,41 +341,44 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     }
   }, [avgPrice, stopLoss]); // eslint-disable-line
 
-  // Load initial historical data and compute MAs
+  // 1s-specific setup: clears all series and enables live-only mode immediately.
+  // Runs on every interval change; only acts when switching to '1s'.
+  // Kept separate so it fires right away on the interval-change render — without
+  // waiting for initialCandles/loading to update (which 1s never does via REST).
   useEffect(() => {
+    if (interval !== '1s') return;
+    const series = candleSeriesRef.current;
+    const volSeries = volumeSeriesRef.current;
+    if (!series || !volSeries) return;
+    series.setData([]);
+    volSeries.setData([]);
+    ema9SeriesRef.current?.setData([]);
+    ema21SeriesRef.current?.setData([]);
+    sma50SeriesRef.current?.setData([]);
+    sma200SeriesRef.current?.setData([]);
+    closesRef.current = [];
+    hasInitialBarRef.current = false;
+    initializedRef.current = true;
+  }, [interval]);
+
+  // Load initial historical data and compute MAs.
+  // Intentionally omits `interval` from deps: adding it caused a stale-data
+  // race where the effect fired immediately on timeframe switch with bars from
+  // the old interval still in initialCandles, leading to out-of-order timestamp
+  // errors in series.update() that crashed the entire React app.
+  // By depending only on initialCandles/loading, this effect only runs after
+  // the hook has already reset its state, so `interval` in the closure is
+  // always the new (correct) value.
+  useEffect(() => {
+    if (interval === '1s') return; // handled by the effect above
     const series = candleSeriesRef.current;
     const volSeries = volumeSeriesRef.current;
     if (!series || !volSeries) return;
 
-    // When interval changes, initialCandles still holds data from the previous interval
-    // for one render cycle (the hook's reset hasn't propagated yet). Skip that stale
-    // firing to prevent loading wrong-interval data — and the out-of-order time errors
-    // that follow when the livePrice effect tries to update against those stale bars.
-    if (appliedIntervalRef.current !== null && appliedIntervalRef.current !== interval) {
-      return;
-    }
-
-    if (interval === '1s') {
-      series.setData([]);
-      volSeries.setData([]);
-      ema9SeriesRef.current?.setData([]);
-      ema21SeriesRef.current?.setData([]);
-      sma50SeriesRef.current?.setData([]);
-      sma200SeriesRef.current?.setData([]);
-      closesRef.current = [];
-      hasInitialBarRef.current = false;
-      initializedRef.current = true;
-      appliedIntervalRef.current = interval;
-      return;
-    }
-
     if (initialCandles.length === 0) {
       closesRef.current = [];
       // REST finished with no data — still allow kline WS updates to flow through
-      if (!loading) {
-        initializedRef.current = true;
-        appliedIntervalRef.current = interval;
-      }
+      if (!loading) initializedRef.current = true;
       return;
     }
 
@@ -388,7 +387,6 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     chartRef.current?.timeScale().fitContent();
     hasInitialBarRef.current = true;
     initializedRef.current = true;
-    appliedIntervalRef.current = interval;
     currentCandleRef.current = initialCandles[initialCandles.length - 1];
 
     const closes: CloseSample[] = initialCandles.map(c => ({ time: c.time as UTCTimestamp, close: c.close }));
@@ -398,7 +396,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     ema21SeriesRef.current?.setData(calcEMA(closes, 21) as MAPoint[]);
     sma50SeriesRef.current?.setData(calcSMA(closes, 50) as MAPoint[]);
     sma200SeriesRef.current?.setData(calcSMA(closes, 200) as MAPoint[]);
-  }, [initialCandles, interval, loading]);
+  }, [initialCandles, loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Apply live candle updates and update MA last values
   useEffect(() => {
@@ -486,7 +484,6 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     initializedRef.current = false;
     hasInitialBarRef.current = false;
     currentCandleRef.current = null;
-    appliedIntervalRef.current = null;
     setInterval(newInterval);
   }, []);
 
@@ -495,7 +492,6 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     hasInitialBarRef.current = false;
     closesRef.current = [];
     currentCandleRef.current = null;
-    appliedIntervalRef.current = null;
     candleSeriesRef.current?.setData([]);
     volumeSeriesRef.current?.setData([]);
     ema9SeriesRef.current?.setData([]);
