@@ -396,7 +396,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     ema21SeriesRef.current?.setData(calcEMA(closes, 21) as MAPoint[]);
     sma50SeriesRef.current?.setData(calcSMA(closes, 50) as MAPoint[]);
     sma200SeriesRef.current?.setData(calcSMA(closes, 200) as MAPoint[]);
-  }, [initialCandles, loading]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [initialCandles, loading]); // eslint-disable-line
 
   // Apply live candle updates and update MA last values
   useEffect(() => {
