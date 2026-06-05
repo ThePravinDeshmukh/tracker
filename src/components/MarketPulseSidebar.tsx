@@ -1,26 +1,22 @@
 import React from 'react';
-import { MomentumRow, StressEvent } from '../types';
-import PulseTable from './PulseTable';
+import { StressEvent } from '../types';
 import StressFeed from './StressFeed';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  rows: MomentumRow[];
   stressEvents: StressEvent[];
 }
 
 export default function MarketPulseSidebar({
   isOpen,
   onClose,
-  rows,
   stressEvents,
 }: Props) {
   return (
     <>
       {isOpen && <div className="watcher-overlay" onClick={onClose} />}
       <div className={`watcher-sidebar pulse-sidebar${isOpen ? ' open' : ''}`}>
-        {/* Header */}
         <div className="watcher-header">
           <span className="watcher-title">
             <span className="pulse-sidebar-icon">⚡</span>
@@ -30,13 +26,6 @@ export default function MarketPulseSidebar({
         </div>
 
         <div className="watcher-body">
-          {/* Pulse Table */}
-          <div className="watcher-section">
-            <div className="watcher-section-label">Pulse Table</div>
-            <PulseTable rows={rows} />
-          </div>
-
-          {/* Stress Feed */}
           <div className="watcher-section">
             <div className="watcher-section-label">
               Stress Feed
@@ -46,7 +35,6 @@ export default function MarketPulseSidebar({
             </div>
             <StressFeed events={stressEvents} />
           </div>
-
         </div>
       </div>
     </>
