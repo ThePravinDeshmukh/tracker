@@ -245,7 +245,6 @@ export default function App() {
       <MarketPulseSidebar
         isOpen={pulseOpen}
         onClose={() => setPulseOpen(false)}
-        rows={momentumRows}
         stressEvents={stressEvents}
       />
 
