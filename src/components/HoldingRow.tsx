@@ -11,6 +11,7 @@ interface Props {
   onViewChart: (symbol: string) => void;
   onCloseTrade: (holding: Holding) => void;
   onAddTo: (holding: Holding) => void;
+  onFocusPrice: (symbol: string) => void;
 }
 
 function fmt(n: number | null | undefined, decimals = 2): string {
@@ -25,7 +26,7 @@ function fmtPrice(n: number | undefined): string {
   return fmt(n, 6);
 }
 
-export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDelete, onViewChart, onCloseTrade, onAddTo }: Props) {
+export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDelete, onViewChart, onCloseTrade, onAddTo, onFocusPrice }: Props) {
   const { symbol, avgPrice, qty } = holding;
   const isShort = holding.type === 'short';
   const [flash, setFlash] = useState('');
@@ -53,15 +54,22 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
   return (
     <div className={`holding-card fade-in${isShort ? ' short-card' : ''}`}>
       <div className="holding-card-header">
-        <div className="coin-info" onClick={() => onViewChart(symbol)} title="View chart" style={{ cursor: 'pointer' }}>
-          <div className="coin-icon" style={{ background: `${color}22`, color }}>
+        <div className="coin-info">
+          <div className="coin-icon" onClick={() => onViewChart(symbol)} title="View chart" style={{ cursor: 'pointer', background: `${color}22`, color }}>
             {getCoinIcon(symbol)}
           </div>
-          <div>
-            <div className="coin-symbol">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div className="coin-symbol" onClick={() => onViewChart(symbol)} title="View chart" style={{ cursor: 'pointer' }}>
               {symbol}
               {isShort && <span className="short-badge">SHORT</span>}
             </div>
+            <button
+              className="hca-btn hca-focus"
+              onClick={() => onFocusPrice(symbol)}
+              title="Focus price view"
+            >
+              👁
+            </button>
           </div>
         </div>
         <div className={`holding-card-pnl-pct ${pnlPct === null ? '' : pnlPct >= 0 ? 'pos' : 'neg'}`}>
