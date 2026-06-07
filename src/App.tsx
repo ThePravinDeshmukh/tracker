@@ -13,6 +13,7 @@ import CloseTradeModal from './components/CloseTradeModal';
 import AddToPositionModal from './components/AddToPositionModal';
 import { useMomentum } from './hooks/useMomentum';
 import MarketPulseSidebar from './components/MarketPulseSidebar';
+import PriceFocusView from './components/PriceFocusView';
 import { useNetworkLog } from './hooks/useNetworkLog';
 import NetworkConsolePanel from './components/NetworkConsolePanel';
 import { useTradeHistory } from './hooks/useTradeHistory';
@@ -65,6 +66,7 @@ export default function App() {
   const [closeTradeTarget, setCloseTradeTarget] = useState<Holding | null>(null);
   const [addToTarget, setAddToTarget] = useState<Holding | null>(null);
   const [pulseOpen, setPulseOpen] = useState(false);
+  const [focusSymbol, setFocusSymbol] = useState<string | null>(null);
 
   const allSymbols = useMemo(
     () => Array.from(new Set([...holdings.map(h => h.symbol), ...watchlist])),
@@ -199,6 +201,7 @@ export default function App() {
                     onViewChart={handleViewChart}
                     onCloseTrade={handleOpenCloseTrade}
                     onAddTo={handleAddTo}
+                    onFocusPrice={setFocusSymbol}
                   />
                 ))}
               </div>
@@ -310,6 +313,14 @@ export default function App() {
       </nav>
 
       <NetworkConsolePanel entries={netEntries} onClear={clearEntries} />
+
+      {focusSymbol && (
+        <PriceFocusView
+          symbol={focusSymbol}
+          livePrice={prices[focusSymbol]}
+          onClose={() => setFocusSymbol(null)}
+        />
+      )}
     </div>
   );
 }
