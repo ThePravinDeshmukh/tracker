@@ -1835,6 +1835,7 @@
   flex: 1;
   position: relative;
   overflow: hidden;
+  touch-action: none;
 }
 
 /* ── Trade History Panel ──────────────────────────────────────────────────── */
