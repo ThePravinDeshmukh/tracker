@@ -312,7 +312,9 @@ export default function App() {
         </button>
       </nav>
 
-      <NetworkConsolePanel entries={netEntries} onClear={clearEntries} />
+      {!focusSymbol && (
+        <NetworkConsolePanel entries={netEntries} onClear={clearEntries} />
+      )}
 
       {focusSymbol && (
         <PriceFocusView

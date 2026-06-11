@@ -68,7 +68,7 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
               onClick={() => onFocusPrice(symbol)}
               title="Focus price view"
             >
-              👁
+              ⊙
             </button>
           </div>
         </div>
