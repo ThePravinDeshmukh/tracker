@@ -2089,7 +2089,7 @@
   position: fixed;
   inset: 0;
   z-index: 500;
-  background: var(--bg);
+  background: #000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2156,7 +2156,7 @@
 }
 .price-focus-close:hover { color: var(--text); border-color: var(--text); }
 
-/* Eye icon button in holding row */
+/* Focus view glyph button in holding row */
 .hca-btn.hca-focus {
   color: var(--muted);
   background: none;
