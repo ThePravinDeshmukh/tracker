@@ -21,7 +21,13 @@ body {
   color: var(--text);
   font-family: var(--sans);
   min-height: 100vh;
+  min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
+}
+
+input, textarea, [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 ::-webkit-scrollbar { width: 4px; }

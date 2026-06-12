@@ -1,5 +1,12 @@
 /* ── Layout ── */
-.app { min-height: 100vh; display: flex; flex-direction: column; }
+.app {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  -webkit-user-select: none;
+  user-select: none;
+}
 
 .header {
   position: sticky; top: 0; z-index: 100;
@@ -1184,8 +1191,7 @@
 .watcher-toggle {
   position: fixed;
   right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  bottom: 100px;
   z-index: 140;
   display: flex;
   flex-direction: column;
@@ -1272,8 +1278,6 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 300px;
-  overflow-y: auto;
 }
 
 .stress-event-card {
