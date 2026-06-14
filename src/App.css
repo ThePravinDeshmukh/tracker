@@ -33,9 +33,9 @@
   display: flex; align-items: center; gap: 6px;
   font-family: var(--mono); font-size: 12px; font-weight: 700;
   letter-spacing: 0.12em; color: var(--green);
-  background: rgba(0, 200, 124, 0.1);
+  background: rgba(0, 189, 132, 0.1);
   padding: 4px 10px; border-radius: 20px;
-  border: 1px solid rgba(0, 200, 124, 0.2);
+  border: 1px solid rgba(0, 189, 132, 0.2);
 }
 .pulse-dot {
   width: 6px; height: 6px; border-radius: 50%;
@@ -69,8 +69,8 @@
   padding: 9px 12px;
 }
 .card.highlight { border-color: transparent; }
-.card.highlight.pos { background: rgba(0, 200, 124, 0.08); border-color: rgba(0, 200, 124, 0.25); }
-.card.highlight.neg { background: rgba(255, 77, 77, 0.08); border-color: rgba(255, 77, 77, 0.25); }
+.card.highlight.pos { background: rgba(0, 189, 132, 0.08); border-color: rgba(0, 189, 132, 0.25); }
+.card.highlight.neg { background: rgba(242, 78, 83, 0.08); border-color: rgba(242, 78, 83, 0.25); }
 
 .card-label {
   font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
@@ -371,14 +371,14 @@
   border: 1px solid rgba(0, 0, 0, 0.3);
   font-weight: 600;
 }
-.btn.short-btn:hover { background: rgba(255, 77, 77, 0.2); transform: translateY(-1px); }
+.btn.short-btn:hover { background: rgba(242, 78, 83, 0.2); transform: translateY(-1px); }
 .btn.long-btn {
   background: rgba(0, 0, 0, 0.12);
   color: var(--green);
   border: 1px solid rgba(0, 0, 0, 0.3);
   font-weight: 600;
 }
-.btn.long-btn:hover { background: rgba(0, 200, 124, 0.2); transform: translateY(-1px); }
+.btn.long-btn:hover { background: rgba(0, 189, 132, 0.2); transform: translateY(-1px); }
 
 .btn.short-confirm { background: var(--red); color: #fff; font-weight: 700; }
 .btn.short-confirm:hover { background: #ff6666; transform: translateY(-1px); }
@@ -390,8 +390,8 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--red);
-  background: rgba(255, 77, 77, 0.12);
-  border: 1px solid rgba(255, 77, 77, 0.3);
+  background: rgba(242, 78, 83, 0.12);
+  border: 1px solid rgba(242, 78, 83, 0.3);
   border-radius: 4px;
   padding: 1px 5px;
   vertical-align: middle;
@@ -408,13 +408,13 @@
 
 /* Short row subtle left border tint */
 .holding-row.short-row {
-  border-left: 3px solid rgba(255, 77, 77, 0.7);
+  border-left: 3px solid rgba(242, 78, 83, 0.7);
 }
 
 /* Short info banner in modal */
 .short-info-banner {
-  background: rgba(255, 77, 77, 0.08);
-  border: 1px solid rgba(255, 77, 77, 0.25);
+  background: rgba(242, 78, 83, 0.08);
+  border: 1px solid rgba(242, 78, 83, 0.25);
   border-radius: 8px;
   padding: 10px 14px;
   font-size: 13px;
@@ -492,7 +492,7 @@
 }
 .holding-card:last-child { border-bottom: none; }
 .holding-card:hover { background: var(--surface2); }
-.holding-card.short-card { border-left-color: rgba(255, 77, 77, 0.7); }
+.holding-card.short-card { border-left-color: rgba(242, 78, 83, 0.7); }
 
 .holding-card-header {
   display: flex;
@@ -622,10 +622,10 @@
   font-size: 15px; padding: 5px 7px; border-radius: 6px; transition: all 0.15s;
   line-height: 1;
 }
-.btn-icon.add:hover { color: var(--green); background: rgba(0, 200, 124, 0.1); }
+.btn-icon.add:hover { color: var(--green); background: rgba(0, 189, 132, 0.1); }
 .btn-icon.edit:hover { color: var(--accent); background: rgba(0, 0, 0, 0.1); }
 .btn-icon.close-trade:hover { color: var(--accent); background: rgba(0, 0, 0, 0.1); }
-.btn-icon.del:hover { color: var(--red); background: rgba(255, 77, 77, 0.1); }
+.btn-icon.del:hover { color: var(--red); background: rgba(242, 78, 83, 0.1); }
 .btn-icon.sell { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; color: var(--accent); }
 .btn-icon.sell:hover { color: var(--accent); background: rgba(0, 0, 0, 0.1); }
 
@@ -696,7 +696,7 @@
 .btn-use-market:disabled { opacity: 0.35; cursor: default; border-color: var(--border); color: var(--muted); }
 
 .error {
-  background: rgba(255, 77, 77, 0.1); border: 1px solid rgba(255, 77, 77, 0.3);
+  background: rgba(242, 78, 83, 0.1); border: 1px solid rgba(242, 78, 83, 0.3);
   color: var(--red); font-size: 14px; padding: 8px 12px;
   border-radius: 8px; margin-bottom: 16px;
 }
@@ -917,12 +917,12 @@
   border: 1px solid;
 }
 .close-trade-pnl.pos {
-  background: rgba(0, 200, 124, 0.06);
-  border-color: rgba(0, 200, 124, 0.25);
+  background: rgba(0, 189, 132, 0.06);
+  border-color: rgba(0, 189, 132, 0.25);
 }
 .close-trade-pnl.neg {
-  background: rgba(255, 77, 77, 0.06);
-  border-color: rgba(255, 77, 77, 0.25);
+  background: rgba(242, 78, 83, 0.06);
+  border-color: rgba(242, 78, 83, 0.25);
 }
 .close-trade-pnl-row {
   display: flex; justify-content: space-between; align-items: center;
@@ -977,7 +977,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--green);
-  background: rgba(0, 200, 124, 0.12);
+  background: rgba(0, 189, 132, 0.12);
   padding: 2px 7px;
   border-radius: 4px;
 }
@@ -1085,8 +1085,8 @@
 }
 .watcher-notification.has-signals {
   color: var(--green);
-  background: rgba(0, 200, 124, 0.07);
-  border-bottom-color: rgba(0, 200, 124, 0.2);
+  background: rgba(0, 189, 132, 0.07);
+  border-bottom-color: rgba(0, 189, 132, 0.2);
 }
 
 .watcher-body {
@@ -1130,8 +1130,8 @@
   margin-bottom: 6px;
 }
 .watcher-signal-card.current {
-  border-color: rgba(0, 200, 124, 0.3);
-  background: rgba(0, 200, 124, 0.05);
+  border-color: rgba(0, 189, 132, 0.3);
+  background: rgba(0, 189, 132, 0.05);
 }
 .watcher-signal-card.past {
   opacity: 0.7;
@@ -1414,7 +1414,7 @@
 }
 .nc-clear-btn:hover {
   color: var(--red);
-  border-color: rgba(255, 77, 77, 0.4);
+  border-color: rgba(242, 78, 83, 0.4);
 }
 
 /* ── Log list ── */
@@ -1476,9 +1476,9 @@
   text-align: center;
 }
 .nc-method--get {
-  background: rgba(0, 200, 124, 0.12);
+  background: rgba(0, 189, 132, 0.12);
   color: var(--green);
-  border: 1px solid rgba(0, 200, 124, 0.25);
+  border: 1px solid rgba(0, 189, 132, 0.25);
 }
 .nc-method--ws {
   background: rgba(0, 0, 0, 0.15);
@@ -2034,13 +2034,13 @@
 }
 .history-side-badge.long {
   color: var(--green);
-  background: rgba(0, 200, 124, 0.12);
-  border: 1px solid rgba(0, 200, 124, 0.25);
+  background: rgba(0, 189, 132, 0.12);
+  border: 1px solid rgba(0, 189, 132, 0.25);
 }
 .history-side-badge.short {
   color: var(--red);
-  background: rgba(255, 77, 77, 0.12);
-  border: 1px solid rgba(255, 77, 77, 0.25);
+  background: rgba(242, 78, 83, 0.12);
+  border: 1px solid rgba(242, 78, 83, 0.25);
 }
 
 .history-cell-muted { color: var(--muted); }
@@ -2068,7 +2068,7 @@
 }
 .history-clear-btn:hover {
   color: var(--red);
-  border-color: rgba(255, 77, 77, 0.4);
+  border-color: rgba(242, 78, 83, 0.4);
 }
 
 /* Responsive */
