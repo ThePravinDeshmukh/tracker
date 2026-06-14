@@ -332,7 +332,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     if (stopLoss !== undefined) {
       series.createPriceLine({
         price: stopLoss,
-        color: '#ff4d4d',
+        color: '#f24e53',
         lineWidth: 1,
         lineStyle: LineStyle.Dashed,
         axisLabelVisible: true,
