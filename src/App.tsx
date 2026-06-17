@@ -291,21 +291,21 @@ export default function App() {
       <nav className="bottom-nav">
         <button
           className={`bottom-nav-btn${activeTab === 'holdings' ? ' active' : ''}`}
-          onClick={() => setActiveTab('holdings')}
+          onClick={() => { handleCloseChart(); setActiveTab('holdings'); }}
         >
           My Holdings
           {holdings.length > 0 && <span className="tab-count">{holdings.length}</span>}
         </button>
         <button
           className={`bottom-nav-btn${activeTab === 'watchlist' ? ' active' : ''}`}
-          onClick={() => setActiveTab('watchlist')}
+          onClick={() => { handleCloseChart(); setActiveTab('watchlist'); }}
         >
           Watchlist
           {watchlist.length > 0 && <span className="tab-count">{watchlist.length}</span>}
         </button>
         <button
           className={`bottom-nav-btn${activeTab === 'history' ? ' active' : ''}`}
-          onClick={() => setActiveTab('history')}
+          onClick={() => { handleCloseChart(); setActiveTab('history'); }}
         >
           History
           {trades.length > 0 && <span className="tab-count">{trades.length}</span>}
