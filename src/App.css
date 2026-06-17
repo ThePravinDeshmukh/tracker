@@ -593,10 +593,6 @@
 .value { font-size: 15px; color: var(--text); }
 .mono { font-family: var(--mono); }
 
-.live-price { transition: color 0.3s; }
-.live-price.up { color: var(--green) !important; }
-.live-price.down { color: var(--red) !important; }
-
 .loading-dot { color: var(--muted); animation: pulse 1.5s ease-in-out infinite; }
 
 .pnl.pos { color: var(--green); }

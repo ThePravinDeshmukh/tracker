@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
 import { Holding } from '../types';
 
@@ -26,22 +26,10 @@ function fmtPrice(n: number | undefined): string {
   return fmt(n, 6);
 }
 
-export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDelete, onViewChart, onCloseTrade, onAddTo, onFocusPrice }: Props) {
+export default function HoldingRow({ holding, livePrice, onEdit, onDelete, onViewChart, onCloseTrade, onAddTo, onFocusPrice }: Props) {
   const { symbol, avgPrice, qty } = holding;
   const isShort = holding.type === 'short';
-  const [flash, setFlash] = useState('');
   const [expanded, setExpanded] = useState(false);
-  const prevRef = useRef<number | undefined>(prevPrice);
-
-  useEffect(() => {
-    if (!livePrice || !prevRef.current) { prevRef.current = livePrice; return; }
-    if (livePrice !== prevRef.current) {
-      setFlash(livePrice > prevRef.current ? 'up' : 'down');
-      const t = setTimeout(() => setFlash(''), 600);
-      prevRef.current = livePrice;
-      return () => clearTimeout(t);
-    }
-  }, [livePrice]);
 
   const invested = avgPrice * qty;
   const currentValue = livePrice ? livePrice * qty : null;
@@ -84,7 +72,7 @@ export default function HoldingRow({ holding, livePrice, prevPrice, onEdit, onDe
         </div>
         <div className="holding-card-stat">
           <div className="holding-card-stat-label">Mark Price</div>
-          <div className={`holding-card-stat-value mono live-price ${flash}`}>
+          <div className="holding-card-stat-value mono live-price">
             {livePrice ? fmtPrice(livePrice) : <span className="loading-dot">•••</span>}
           </div>
         </div>
