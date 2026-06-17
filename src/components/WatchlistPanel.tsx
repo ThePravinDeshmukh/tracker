@@ -48,6 +48,7 @@ const POPULAR_COINS = [
   'BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','ADAUSDT','AVAXUSDT','DOTUSDT','MATICUSDT','LINKUSDT',
   'LTCUSDT','UNIUSDT','ATOMUSDT','DOGEUSDT','SUIUSDT','APTUSDT','OPUSDT','ARBUSDT','NEARUSDT','PEPEUSDT',
   'TRXUSDT','TONUSDT','HBARUSDT','SHIBUSDT','FETUSDT','WIFUSDT','TIAUSDT','JUPUSDT','RENDERUSDT','SEIUSDT',
+  'HUSDT',
 ];
 
 export default function WatchlistPanel({ watchlist, prices, prevPrices, change24h, volumes, high24h, low24h, trades24h, momentumRows, onAdd, onRemove, onViewChart }: Props) {

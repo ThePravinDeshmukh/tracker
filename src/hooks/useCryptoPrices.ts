@@ -212,6 +212,7 @@ export function getCoinIcon(symbol: string): string {
     VET: 'V', ALGO: 'A', AAVE: 'A', FIL: 'F', THETA: 'Θ', XLM: '*',
     EOS: 'E', MKR: 'M', GRT: 'G', PEPE: '🐸', JUP: 'J', SEI: 'S',
     TIA: 'T', WIF: '🐕', FET: 'F', RENDER: 'R', DUSK: 'D', HANA: 'H',
+    H: 'Ħ',
   };
   return map[base] ?? base[0];
 }
@@ -227,7 +228,7 @@ const KNOWN_COIN_COLORS: Record<string, string> = {
   THETA: '#2ab8e6', XLM: '#7d00ff', EOS: '#443f54', MKR: '#1aab9b',
   GRT: '#6f4cff', PEPE: '#479a47', JUP: '#c7b369', SEI: '#9b1f1f',
   TIA: '#7b2d8b', WIF: '#c4a35a', FET: '#1a1a2e', RENDER: '#ff5733',
-  DUSK: '#372d5e', HANA: '#ff6b9d',
+  DUSK: '#372d5e', HANA: '#ff6b9d', H: '#14b8a6',
 };
 
 function generateCoinColor(symbol: string): string {
