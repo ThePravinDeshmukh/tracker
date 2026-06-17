@@ -1,7 +1,7 @@
 /* ── Layout ── */
 .app {
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100%;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   -webkit-user-select: none;
@@ -489,6 +489,9 @@
   border-bottom: 1px solid var(--border);
   border-left: 3px solid var(--accent);
   transition: background 0.15s;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 .holding-card:last-child { border-bottom: none; }
 .holding-card:hover { background: var(--surface2); }
@@ -1699,7 +1702,10 @@
 
 .live-chart-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 56px;
   z-index: 1000;
   background: #0b0e11;
   display: flex;
