@@ -488,13 +488,12 @@
   padding: 12px 14px;
   border-bottom: 1px solid var(--border);
   border-left: 3px solid var(--accent);
-  transition: background 0.15s;
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 .holding-card:last-child { border-bottom: none; }
-.holding-card:hover { background: var(--surface2); }
 .holding-card.short-card { border-left-color: rgba(242, 78, 83, 0.7); }
 
 .holding-card-header {
