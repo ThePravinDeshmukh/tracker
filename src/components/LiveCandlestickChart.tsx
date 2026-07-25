@@ -8,11 +8,30 @@ import {
   ISeriesApi,
   UTCTimestamp,
   MouseEventParams,
+  LogicalRange,
 } from 'lightweight-charts';
 import { CandleInterval, CandlePoint } from '../types';
 import { useLiveCandlesticks } from '../hooks/useLiveCandlesticks';
 import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
-import { calcEMA, calcSMA, calcLastEMA, calcLastSMA, MAPoint } from '../utils/indicators';
+import {
+  calcEMA,
+  calcSMA,
+  calcLastEMA,
+  calcLastSMA,
+  calcRSI,
+  calcLastRSI,
+  calcMACD,
+  calcLastMACD,
+  MAPoint,
+  CloseSample,
+  RSI_PERIOD,
+  MACD_FAST_PERIOD,
+  MACD_SLOW_PERIOD,
+  MACD_SIGNAL_PERIOD,
+} from '../utils/indicators';
+import { formatIstTick, formatIstCrosshair } from '../utils/timeFormat';
+import RsiChart, { RsiChartHandle } from './RsiChart';
+import MacdChart, { MacdChartHandle } from './MacdChart';
 
 interface Props {
   symbol: string;
@@ -28,11 +47,6 @@ interface OhlcvInfo {
   low: number;
   close: number;
   volume: number;
-}
-
-interface CloseSample {
-  time: UTCTimestamp;
-  close: number;
 }
 
 const TIMEFRAMES: { key: CandleInterval; label: string }[] = [
@@ -59,39 +73,6 @@ const MA_EMA9_COLOR = '#F0B90B';
 const MA_EMA21_COLOR = '#4CAF50';
 const MA_SMA50_COLOR = '#A855F7';
 const MA_SMA200_COLOR = '#F6465D';
-
-const IST_TZ = 'Asia/Kolkata';
-
-function toIstDate(time: UTCTimestamp): Date {
-  return new Date((time as number) * 1000);
-}
-
-function formatIstTick(time: UTCTimestamp, secondsVisible: boolean, dateOnly: boolean): string {
-  const d = toIstDate(time);
-  if (dateOnly) {
-    return d.toLocaleDateString('en-GB', { timeZone: IST_TZ, day: '2-digit', month: 'short' });
-  }
-  return d.toLocaleTimeString('en-GB', {
-    timeZone: IST_TZ,
-    hour: '2-digit',
-    minute: '2-digit',
-    second: secondsVisible ? '2-digit' : undefined,
-    hour12: false,
-  });
-}
-
-function formatIstCrosshair(time: UTCTimestamp, secondsVisible: boolean): string {
-  const d = toIstDate(time);
-  const date = d.toLocaleDateString('en-GB', { timeZone: IST_TZ, day: '2-digit', month: 'short', year: 'numeric' });
-  const t = d.toLocaleTimeString('en-GB', {
-    timeZone: IST_TZ,
-    hour: '2-digit',
-    minute: '2-digit',
-    second: secondsVisible ? '2-digit' : undefined,
-    hour12: false,
-  });
-  return `${date} ${t} IST`;
-}
 
 function fmtPrice(n: number): string {
   return n.toLocaleString('en-US', { minimumFractionDigits: 6, maximumFractionDigits: 6 });
@@ -148,11 +129,13 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
   const ema21SeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
   const sma50SeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
   const sma200SeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const rsiChartRef = useRef<RsiChartHandle>(null);
+  const macdChartRef = useRef<MacdChartHandle>(null);
 
   const initializedRef = useRef(false);
   // lightweight-charts requires setData([bar]) before update() works on an empty series
   const hasInitialBarRef = useRef(false);
-  // accumulates all close prices for MA computation across initial + live data
+  // accumulates all close prices for MA/RSI/MACD computation across initial + live data
   const closesRef = useRef<CloseSample[]>([]);
   const currentCandleRef = useRef<CandlePoint | null>(null);
 
@@ -161,6 +144,8 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
   const icon = getCoinIcon(symbol);
   const color = getCoinColor(symbol);
   const baseSymbol = symbol.replace(/USDT$/, '');
+  const secondsVisible = interval === '1s';
+  const dateOnly = interval === '1d';
 
   // Create chart once
   useEffect(() => {
@@ -296,8 +281,6 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
 
   // Update timeScale options when interval changes
   useEffect(() => {
-    const secondsVisible = interval === '1s';
-    const dateOnly = interval === '1d';
     chartRef.current?.timeScale().applyOptions({
       timeVisible: !dateOnly,
       secondsVisible,
@@ -312,7 +295,36 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
           formatIstCrosshair(time, secondsVisible),
       },
     });
-  }, [interval]);
+  }, [secondsVisible, dateOnly]);
+
+  // Link pan/zoom across the candlestick, RSI, and MACD panes so scrubbing one
+  // moves them all together, like a standard multi-pane chart layout.
+  useEffect(() => {
+    const mainChart = chartRef.current;
+    const rsiChart = rsiChartRef.current?.getChart() ?? null;
+    const macdChart = macdChartRef.current?.getChart() ?? null;
+    if (!mainChart || !rsiChart || !macdChart) return;
+
+    const charts = [mainChart, rsiChart, macdChart];
+    let syncing = false;
+
+    const subscriptions = charts.map(chart => {
+      const handler = (range: LogicalRange | null) => {
+        if (syncing || !range) return;
+        syncing = true;
+        for (const other of charts) {
+          if (other !== chart) other.timeScale().setVisibleLogicalRange(range);
+        }
+        syncing = false;
+      };
+      chart.timeScale().subscribeVisibleLogicalRangeChange(handler);
+      return { chart, handler };
+    });
+
+    return () => {
+      subscriptions.forEach(({ chart, handler }) => chart.timeScale().unsubscribeVisibleLogicalRangeChange(handler));
+    };
+  }, []); // eslint-disable-line
 
   // Set avg/stopLoss price lines when series is ready and values change
   useEffect(() => {
@@ -356,6 +368,8 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     ema21SeriesRef.current?.setData([]);
     sma50SeriesRef.current?.setData([]);
     sma200SeriesRef.current?.setData([]);
+    rsiChartRef.current?.clear();
+    macdChartRef.current?.clear();
     closesRef.current = [];
     hasInitialBarRef.current = false;
     initializedRef.current = true;
@@ -377,6 +391,8 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
 
     if (initialCandles.length === 0) {
       closesRef.current = [];
+      rsiChartRef.current?.clear();
+      macdChartRef.current?.clear();
       // REST finished with no data — still allow kline WS updates to flow through
       if (!loading) initializedRef.current = true;
       return;
@@ -396,6 +412,8 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     ema21SeriesRef.current?.setData(calcEMA(closes, 21) as MAPoint[]);
     sma50SeriesRef.current?.setData(calcSMA(closes, 50) as MAPoint[]);
     sma200SeriesRef.current?.setData(calcSMA(closes, 200) as MAPoint[]);
+    rsiChartRef.current?.setData(calcRSI(closes, RSI_PERIOD));
+    macdChartRef.current?.setData(calcMACD(closes, MACD_FAST_PERIOD, MACD_SLOW_PERIOD, MACD_SIGNAL_PERIOD));
   }, [initialCandles, loading]); // eslint-disable-line
 
   // Apply live candle updates and update MA last values
@@ -425,6 +443,12 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     if (lastEma21 !== null) ema21SeriesRef.current?.update({ time: t, value: lastEma21 });
     if (lastSma50 !== null) sma50SeriesRef.current?.update({ time: t, value: lastSma50 });
     if (lastSma200 !== null) sma200SeriesRef.current?.update({ time: t, value: lastSma200 });
+
+    // Update RSI/MACD panes with latest computed value
+    const lastRsi = calcLastRSI(closes, RSI_PERIOD);
+    const lastMacd = calcLastMACD(closes, MACD_FAST_PERIOD, MACD_SLOW_PERIOD, MACD_SIGNAL_PERIOD);
+    if (lastRsi !== null) rsiChartRef.current?.update({ time: t, value: lastRsi });
+    if (lastMacd !== null) macdChartRef.current?.update(lastMacd);
 
     if (!hasInitialBarRef.current) {
       // series.update() silently fails on a completely empty series — seed it first
@@ -498,6 +522,8 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     ema21SeriesRef.current?.setData([]);
     sma50SeriesRef.current?.setData([]);
     sma200SeriesRef.current?.setData([]);
+    rsiChartRef.current?.clear();
+    macdChartRef.current?.clear();
     setReloadKey(k => k + 1);
   }, []);
 
@@ -581,8 +607,12 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
         </span>
       </div>
 
-      {/* Chart canvas area */}
-      <div className="live-chart-container" ref={containerRef} />
+      {/* Chart canvas area + indicator panes */}
+      <div className="live-chart-panes">
+        <div className="live-chart-container" ref={containerRef} />
+        <RsiChart ref={rsiChartRef} secondsVisible={secondsVisible} dateOnly={dateOnly} />
+        <MacdChart ref={macdChartRef} secondsVisible={secondsVisible} dateOnly={dateOnly} />
+      </div>
     </div>
   );
 }
