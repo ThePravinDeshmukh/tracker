@@ -14,8 +14,6 @@ import AddToPositionModal from './components/AddToPositionModal';
 import { useMomentum } from './hooks/useMomentum';
 import MarketPulseSidebar from './components/MarketPulseSidebar';
 import PriceFocusView from './components/PriceFocusView';
-import { useNetworkLog } from './hooks/useNetworkLog';
-import NetworkConsolePanel from './components/NetworkConsolePanel';
 import { useTradeHistory } from './hooks/useTradeHistory';
 type ActiveTab = 'holdings' | 'watchlist' | 'history';
 
@@ -75,7 +73,6 @@ export default function App() {
 
   const { prices, prevPrices, volumes, change24h, high24h, low24h, trades24h } = useCryptoPrices(allSymbols);
   const { momentumRows, stressEvents } = useMomentum(allSymbols, prices, volumes);
-  const { entries: netEntries, clearEntries } = useNetworkLog();
 
   const enriched = useMemo(
     () => holdings.map(h => enrichHolding(h, prices[h.symbol])),
@@ -311,10 +308,6 @@ export default function App() {
           {trades.length > 0 && <span className="tab-count">{trades.length}</span>}
         </button>
       </nav>
-
-      {!focusSymbol && (
-        <NetworkConsolePanel entries={netEntries} onClear={clearEntries} />
-      )}
 
       {focusSymbol && (
         <PriceFocusView

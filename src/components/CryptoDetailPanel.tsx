@@ -2,31 +2,11 @@ import React from 'react';
 import { MomentumRow } from '../types';
 
 interface Props {
-  symbol: string;
   price: number | undefined;
-  change24h: number | undefined;
-  volume24h: number | undefined;
   high24h: number | undefined;
   low24h: number | undefined;
   trades24h: number | undefined;
   momentumRow: MomentumRow | undefined;
-}
-
-function fmtPct(value: number | null | undefined): { text: string; cls: string } {
-  if (value === null || value === undefined || isNaN(value)) return { text: '—', cls: '' };
-  const sign = value >= 0 ? '+' : '';
-  return {
-    text: `${sign}${value.toFixed(2)}%`,
-    cls: value > 0 ? 'pos' : value < 0 ? 'neg' : '',
-  };
-}
-
-function fmtVolume(vol: number | null | undefined): string {
-  if (vol === null || vol === undefined || isNaN(vol) || vol <= 0) return '—';
-  if (vol >= 1_000_000_000) return `$${(vol / 1_000_000_000).toFixed(2)}B`;
-  if (vol >= 1_000_000)     return `$${(vol / 1_000_000).toFixed(2)}M`;
-  if (vol >= 1_000)         return `$${(vol / 1_000).toFixed(1)}K`;
-  return `$${vol.toFixed(0)}`;
 }
 
 function fmtPrice(price: number): string {
@@ -41,21 +21,7 @@ function rangeHint(pct: number): string {
   return 'mid-range';
 }
 
-export default function CryptoDetailPanel({ symbol, price, change24h, volume24h, high24h, low24h, trades24h, momentumRow }: Props) {
-  const priceChanges = [
-    { label: '1m', ...fmtPct(momentumRow?.ret1m) },
-    { label: '5m', ...fmtPct(momentumRow?.ret5m) },
-    { label: '1h', ...fmtPct(momentumRow?.ret1h) },
-    { label: '24h', ...fmtPct(change24h) },
-  ];
-
-  const volumes = [
-    { label: '1m', text: fmtVolume(momentumRow?.volAdded1m) },
-    { label: '5m', text: fmtVolume(momentumRow?.volAdded5m) },
-    { label: '1h', text: fmtVolume(momentumRow?.volAdded1h) },
-    { label: '24h', text: fmtVolume(volume24h) },
-  ];
-
+export default function CryptoDetailPanel({ price, high24h, low24h, trades24h, momentumRow }: Props) {
   const hasRange = high24h !== undefined && low24h !== undefined && price !== undefined
     && !isNaN(high24h) && !isNaN(low24h) && high24h > low24h;
 
@@ -69,32 +35,6 @@ export default function CryptoDetailPanel({ symbol, price, change24h, volume24h,
 
   return (
     <div className="crypto-detail-panel">
-
-      {/* Price Change % */}
-      <div className="detail-section">
-        <div className="detail-section-label">Price Change</div>
-        <div className="detail-grid-4">
-          {priceChanges.map(({ label, text, cls }) => (
-            <div key={label} className="detail-cell">
-              <span className="detail-cell-label">{label}</span>
-              <span className={`detail-cell-value mono ${cls}`}>{text}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Volume */}
-      <div className="detail-section">
-        <div className="detail-section-label">Volume Added</div>
-        <div className="detail-grid-4">
-          {volumes.map(({ label, text }) => (
-            <div key={label} className="detail-cell">
-              <span className="detail-cell-label">{label}</span>
-              <span className="detail-cell-value mono muted">{text}</span>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* 24h Range */}
       {hasRange && rangePct !== null && (
