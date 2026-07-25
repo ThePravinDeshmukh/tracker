@@ -8,7 +8,8 @@ import {
   ISeriesApi,
   UTCTimestamp,
   MouseEventParams,
-  LogicalRange,
+  Range,
+  Time,
 } from 'lightweight-charts';
 import { CandleInterval, CandlePoint } from '../types';
 import { useLiveCandlesticks } from '../hooks/useLiveCandlesticks';
@@ -297,8 +298,36 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     });
   }, [secondsVisible, dateOnly]);
 
+  // The candlestick, RSI, and MACD panes each size their own right price
+  // scale to fit their own labels (e.g. "112,862.524017" vs "51.96" vs
+  // "0.0016"). Unequal price-scale widths shift each pane's plot area by a
+  // different number of pixels, making the same timestamp land at different
+  // x-positions across panes even when their visible time ranges match.
+  // Force all three to the widest one.
+  const syncPriceScaleWidths = useCallback(() => {
+    const mainChart = chartRef.current;
+    const rsiChart = rsiChartRef.current?.getChart() ?? null;
+    const macdChart = macdChartRef.current?.getChart() ?? null;
+    if (!mainChart || !rsiChart || !macdChart) return;
+
+    const charts = [mainChart, rsiChart, macdChart];
+    const maxWidth = Math.max(...charts.map(chart => chart.priceScale('right').width()));
+    if (maxWidth <= 0) return;
+    for (const chart of charts) {
+      chart.priceScale('right').applyOptions({ minimumWidth: maxWidth });
+    }
+  }, []);
+
   // Link pan/zoom across the candlestick, RSI, and MACD panes so scrubbing one
   // moves them all together, like a standard multi-pane chart layout.
+  //
+  // This syncs by *time* range, not logical (bar-index) range. RSI/MACD need
+  // a warm-up window (RSI_PERIOD / MACD_SLOW_PERIOD+MACD_SIGNAL_PERIOD bars)
+  // before they emit a first value, so their series start later than the
+  // candles — logical index 0 on the RSI/MACD panes is a later timestamp
+  // than logical index 0 on the candle pane. Syncing by bar index would line
+  // up the wrong bars across panes; syncing by the actual time window keeps
+  // every pane showing the same wall-clock span.
   useEffect(() => {
     const mainChart = chartRef.current;
     const rsiChart = rsiChartRef.current?.getChart() ?? null;
@@ -309,22 +338,33 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     let syncing = false;
 
     const subscriptions = charts.map(chart => {
-      const handler = (range: LogicalRange | null) => {
+      const handler = (range: Range<Time> | null) => {
         if (syncing || !range) return;
         syncing = true;
-        for (const other of charts) {
-          if (other !== chart) other.timeScale().setVisibleLogicalRange(range);
+        try {
+          for (const other of charts) {
+            if (other === chart) continue;
+            try {
+              // Throws if `other` has no data covering `range` yet (e.g. still
+              // loading, or mid-timeframe-switch) — skip that pane this tick.
+              other.timeScale().setVisibleRange(range);
+            } catch {}
+          }
+        } finally {
+          syncing = false;
         }
-        syncing = false;
+        syncPriceScaleWidths();
       };
-      chart.timeScale().subscribeVisibleLogicalRangeChange(handler);
+      chart.timeScale().subscribeVisibleTimeRangeChange(handler);
       return { chart, handler };
     });
 
+    syncPriceScaleWidths();
+
     return () => {
-      subscriptions.forEach(({ chart, handler }) => chart.timeScale().unsubscribeVisibleLogicalRangeChange(handler));
+      subscriptions.forEach(({ chart, handler }) => chart.timeScale().unsubscribeVisibleTimeRangeChange(handler));
     };
-  }, []); // eslint-disable-line
+  }, [syncPriceScaleWidths]);
 
   // Set avg/stopLoss price lines when series is ready and values change
   useEffect(() => {
@@ -414,6 +454,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     sma200SeriesRef.current?.setData(calcSMA(closes, 200) as MAPoint[]);
     rsiChartRef.current?.setData(calcRSI(closes, RSI_PERIOD));
     macdChartRef.current?.setData(calcMACD(closes, MACD_FAST_PERIOD, MACD_SLOW_PERIOD, MACD_SIGNAL_PERIOD));
+    syncPriceScaleWidths();
   }, [initialCandles, loading]); // eslint-disable-line
 
   // Apply live candle updates and update MA last values
@@ -449,6 +490,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     const lastMacd = calcLastMACD(closes, MACD_FAST_PERIOD, MACD_SLOW_PERIOD, MACD_SIGNAL_PERIOD);
     if (lastRsi !== null) rsiChartRef.current?.update({ time: t, value: lastRsi });
     if (lastMacd !== null) macdChartRef.current?.update(lastMacd);
+    syncPriceScaleWidths();
 
     if (!hasInitialBarRef.current) {
       // series.update() silently fails on a completely empty series — seed it first
