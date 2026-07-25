@@ -320,14 +320,16 @@
 
 @media (max-width: 900px) {
   .watchlist-header { display: none; }
-  .watchlist-row { grid-template-columns: 1fr 1fr 20px 40px; }
-  .watchlist-row > .watchlist-asset { grid-column: 1 / -1; padding-bottom: 2px; }
+  .watchlist-row { grid-template-columns: 96px 1fr 1fr 16px 28px; gap: 6px; }
+  .watchlist-symbol { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .watchlist-volume { display: none; }
 }
 @media (max-width: 560px) {
   .tab-btn { padding: 12px 10px; font-size: 14px; }
   .watchlist-add-row, .watchlist-add-bar { padding: 12px 16px; }
-  .watchlist-row { padding: 6px 16px; grid-template-columns: 1fr 1fr 20px 40px; }
+  .watchlist-row { padding: 8px 16px; grid-template-columns: 84px 1fr 1fr 16px 28px; gap: 6px; }
+  .watchlist-symbol { font-size: 12px; }
+  .watchlist-price, .watchlist-change { font-size: 12px; }
   .watchlist-suggestion { padding: 9px 16px; }
 }
 
