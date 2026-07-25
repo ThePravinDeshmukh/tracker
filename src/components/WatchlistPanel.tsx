@@ -215,10 +215,7 @@ export default function WatchlistPanel({ watchlist, prices, prevPrices, change24
                 </div>
                 {isExpanded && (
                   <CryptoDetailPanel
-                    symbol={symbol}
                     price={price}
-                    change24h={changePct}
-                    volume24h={volumes[symbol]}
                     high24h={high24h[symbol]}
                     low24h={low24h[symbol]}
                     trades24h={trades24h[symbol]}
