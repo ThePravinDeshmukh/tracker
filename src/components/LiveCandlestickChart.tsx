@@ -8,8 +8,7 @@ import {
   ISeriesApi,
   UTCTimestamp,
   MouseEventParams,
-  Range,
-  Time,
+  LogicalRange,
 } from 'lightweight-charts';
 import { CandleInterval, CandlePoint } from '../types';
 import { useLiveCandlesticks } from '../hooks/useLiveCandlesticks';
@@ -23,6 +22,7 @@ import {
   calcLastRSI,
   calcMACD,
   calcLastMACD,
+  padLeadingWhitespace,
   MAPoint,
   CloseSample,
   RSI_PERIOD,
@@ -304,6 +304,12 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
   // different number of pixels, making the same timestamp land at different
   // x-positions across panes even when their visible time ranges match.
   // Force all three to the widest one.
+  //
+  // Only call this from data-driven events (initial load, live updates), not
+  // from the pan/zoom handler below — resizing a price scale mid-gesture
+  // shifts the plot width out from under an active touch drag, which turns
+  // a one-finger pan into an apparent stretch/zoom.
+  const lastSyncedWidthRef = useRef(0);
   const syncPriceScaleWidths = useCallback(() => {
     const mainChart = chartRef.current;
     const rsiChart = rsiChartRef.current?.getChart() ?? null;
@@ -312,7 +318,8 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
 
     const charts = [mainChart, rsiChart, macdChart];
     const maxWidth = Math.max(...charts.map(chart => chart.priceScale('right').width()));
-    if (maxWidth <= 0) return;
+    if (maxWidth <= 0 || maxWidth === lastSyncedWidthRef.current) return;
+    lastSyncedWidthRef.current = maxWidth;
     for (const chart of charts) {
       chart.priceScale('right').applyOptions({ minimumWidth: maxWidth });
     }
@@ -321,13 +328,20 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
   // Link pan/zoom across the candlestick, RSI, and MACD panes so scrubbing one
   // moves them all together, like a standard multi-pane chart layout.
   //
-  // This syncs by *time* range, not logical (bar-index) range. RSI/MACD need
-  // a warm-up window (RSI_PERIOD / MACD_SLOW_PERIOD+MACD_SIGNAL_PERIOD bars)
-  // before they emit a first value, so their series start later than the
-  // candles — logical index 0 on the RSI/MACD panes is a later timestamp
-  // than logical index 0 on the candle pane. Syncing by bar index would line
-  // up the wrong bars across panes; syncing by the actual time window keeps
-  // every pane showing the same wall-clock span.
+  // Syncs by logical (bar-index) range, applying the exact same {from, to}
+  // index pair to all three panes. That's what keeps this stable under a
+  // fast drag: lightweight-charts resolves setVisibleLogicalRange/setVisible-
+  // Range through an internal requestAnimationFrame, so the "other" panes'
+  // own range-change events fire on a later frame, after this handler's
+  // `syncing` guard has already been reset — syncing by *time* range was
+  // tried and produces a feedback loop there (each pane re-derives a
+  // slightly different index range from the shared time window and re-
+  // propagates it, snowballing into a runaway zoom on a one-finger drag).
+  // Applying the identical index pair to every pane sidesteps that: the
+  // delayed re-fire just reapplies the same value, a no-op. RSI/MACD are
+  // kept aligned with the candles despite their shorter (warm-up-delayed)
+  // data via leading whitespace points — see padLeadingWhitespace below —
+  // so bar index N means the same timestamp in every pane.
   useEffect(() => {
     const mainChart = chartRef.current;
     const rsiChart = rsiChartRef.current?.getChart() ?? null;
@@ -338,31 +352,22 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     let syncing = false;
 
     const subscriptions = charts.map(chart => {
-      const handler = (range: Range<Time> | null) => {
+      const handler = (range: LogicalRange | null) => {
         if (syncing || !range) return;
         syncing = true;
-        try {
-          for (const other of charts) {
-            if (other === chart) continue;
-            try {
-              // Throws if `other` has no data covering `range` yet (e.g. still
-              // loading, or mid-timeframe-switch) — skip that pane this tick.
-              other.timeScale().setVisibleRange(range);
-            } catch {}
-          }
-        } finally {
-          syncing = false;
+        for (const other of charts) {
+          if (other !== chart) other.timeScale().setVisibleLogicalRange(range);
         }
-        syncPriceScaleWidths();
+        syncing = false;
       };
-      chart.timeScale().subscribeVisibleTimeRangeChange(handler);
+      chart.timeScale().subscribeVisibleLogicalRangeChange(handler);
       return { chart, handler };
     });
 
     syncPriceScaleWidths();
 
     return () => {
-      subscriptions.forEach(({ chart, handler }) => chart.timeScale().unsubscribeVisibleTimeRangeChange(handler));
+      subscriptions.forEach(({ chart, handler }) => chart.timeScale().unsubscribeVisibleLogicalRangeChange(handler));
     };
   }, [syncPriceScaleWidths]);
 
@@ -452,8 +457,12 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     ema21SeriesRef.current?.setData(calcEMA(closes, 21) as MAPoint[]);
     sma50SeriesRef.current?.setData(calcSMA(closes, 50) as MAPoint[]);
     sma200SeriesRef.current?.setData(calcSMA(closes, 200) as MAPoint[]);
-    rsiChartRef.current?.setData(calcRSI(closes, RSI_PERIOD));
-    macdChartRef.current?.setData(calcMACD(closes, MACD_FAST_PERIOD, MACD_SLOW_PERIOD, MACD_SIGNAL_PERIOD));
+
+    const fullTimes = closes.map(c => c.time);
+    rsiChartRef.current?.setData(padLeadingWhitespace(fullTimes, calcRSI(closes, RSI_PERIOD)));
+    macdChartRef.current?.setData(
+      padLeadingWhitespace(fullTimes, calcMACD(closes, MACD_FAST_PERIOD, MACD_SLOW_PERIOD, MACD_SIGNAL_PERIOD))
+    );
     syncPriceScaleWidths();
   }, [initialCandles, loading]); // eslint-disable-line
 

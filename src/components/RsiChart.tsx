@@ -1,11 +1,11 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { createChart, ColorType, IChartApi, ISeriesApi, LineStyle, UTCTimestamp } from 'lightweight-charts';
-import { MAPoint, RSI_PERIOD } from '../utils/indicators';
+import { MAPoint, RSI_PERIOD, WhitespacePoint } from '../utils/indicators';
 import { formatIstTick, formatIstCrosshair } from '../utils/timeFormat';
 
 export interface RsiChartHandle {
   getChart: () => IChartApi | null;
-  setData: (points: MAPoint[]) => void;
+  setData: (points: (MAPoint | WhitespacePoint)[]) => void;
   update: (point: MAPoint) => void;
   clear: () => void;
 }
@@ -124,7 +124,7 @@ const RsiChart = forwardRef<RsiChartHandle, Props>(function RsiChart({ secondsVi
 
   useImperativeHandle(ref, () => ({
     getChart: () => chartRef.current,
-    setData: (points: MAPoint[]) => seriesRef.current?.setData(points),
+    setData: (points: (MAPoint | WhitespacePoint)[]) => seriesRef.current?.setData(points),
     update: (point: MAPoint) => seriesRef.current?.update(point),
     clear: () => seriesRef.current?.setData([]),
   }), []);

@@ -1,13 +1,17 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { createChart, ColorType, IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
-import { MACDPoint, MACD_FAST_PERIOD, MACD_SLOW_PERIOD, MACD_SIGNAL_PERIOD } from '../utils/indicators';
+import { MACDPoint, MACD_FAST_PERIOD, MACD_SLOW_PERIOD, MACD_SIGNAL_PERIOD, WhitespacePoint } from '../utils/indicators';
 import { formatIstTick, formatIstCrosshair } from '../utils/timeFormat';
 
 export interface MacdChartHandle {
   getChart: () => IChartApi | null;
-  setData: (points: MACDPoint[]) => void;
+  setData: (points: (MACDPoint | WhitespacePoint)[]) => void;
   update: (point: MACDPoint) => void;
   clear: () => void;
+}
+
+function isMacdPoint(point: MACDPoint | WhitespacePoint): point is MACDPoint {
+  return 'macd' in point;
 }
 
 interface Props {
@@ -125,11 +129,15 @@ const MacdChart = forwardRef<MacdChartHandle, Props>(function MacdChart({ second
 
   useImperativeHandle(ref, () => ({
     getChart: () => chartRef.current,
-    setData: (points: MACDPoint[]) => {
-      macdSeriesRef.current?.setData(points.map(p => ({ time: p.time, value: p.macd })));
-      signalSeriesRef.current?.setData(points.map(p => ({ time: p.time, value: p.signal })));
+    setData: (points: (MACDPoint | WhitespacePoint)[]) => {
+      macdSeriesRef.current?.setData(
+        points.map(p => (isMacdPoint(p) ? { time: p.time, value: p.macd } : { time: p.time }))
+      );
+      signalSeriesRef.current?.setData(
+        points.map(p => (isMacdPoint(p) ? { time: p.time, value: p.signal } : { time: p.time }))
+      );
       histSeriesRef.current?.setData(
-        points.map(p => ({ time: p.time, value: p.histogram, color: histogramColor(p.histogram) }))
+        points.map(p => (isMacdPoint(p) ? { time: p.time, value: p.histogram, color: histogramColor(p.histogram) } : { time: p.time }))
       );
     },
     update: (point: MACDPoint) => {

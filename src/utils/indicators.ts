@@ -10,6 +10,39 @@ export interface CloseSample {
   close: number;
 }
 
+// A bar with no indicator value yet (e.g. still inside the warm-up window).
+// lightweight-charts renders these as empty space but still counts them
+// toward the series' timeline, which is what keeps a shorter indicator
+// series' bar indices lined up with the full-length candle series.
+export interface WhitespacePoint {
+  time: UTCTimestamp;
+}
+
+// RSI/MACD only produce a value once their warm-up window (RSI_PERIOD, or
+// MACD_SLOW_PERIOD+MACD_SIGNAL_PERIOD) is satisfied, so their data starts
+// later than the candles. Left as-is, that shorter series would have its own
+// bar index 0 land on a later timestamp than the candle pane's bar index 0,
+// throwing off pane-to-pane alignment. Padding the front with whitespace
+// points (one per skipped candle time) makes the indicator pane's timeline
+// exactly match the candle pane's, so the same bar index is the same time
+// in every pane.
+export function padLeadingWhitespace<T extends { time: UTCTimestamp }>(
+  fullTimes: UTCTimestamp[],
+  data: T[]
+): (T | WhitespacePoint)[] {
+  const result: (T | WhitespacePoint)[] = [];
+  let dataIndex = 0;
+  for (const time of fullTimes) {
+    if (dataIndex < data.length && data[dataIndex].time === time) {
+      result.push(data[dataIndex]);
+      dataIndex++;
+    } else {
+      result.push({ time });
+    }
+  }
+  return result;
+}
+
 export const RSI_PERIOD = 14;
 export const MACD_FAST_PERIOD = 12;
 export const MACD_SLOW_PERIOD = 26;
