@@ -161,7 +161,7 @@ const MacdChart = forwardRef<MacdChartHandle, Props>(function MacdChart({ second
       <div className="indicator-pane-label">
         MACD ({MACD_FAST_PERIOD},{MACD_SLOW_PERIOD},{MACD_SIGNAL_PERIOD})
       </div>
-      <div className="indicator-pane-container indicator-pane-container--macd" ref={containerRef} />
+      <div className="indicator-pane-container" ref={containerRef} />
     </div>
   );
 });
