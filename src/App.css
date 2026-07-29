@@ -1618,7 +1618,8 @@
 }
 
 .live-chart-container {
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 0;
   position: relative;
   overflow: hidden;
   touch-action: none;
@@ -1635,7 +1636,8 @@
 .indicator-pane {
   display: flex;
   flex-direction: column;
-  flex: 0 0 auto;
+  flex: 0 0 20%;
+  min-height: 0;
   border-top: 1px solid #1E2329;
   background: #0b0e11;
 }
@@ -1649,14 +1651,11 @@
 }
 
 .indicator-pane-container {
-  height: 110px;
+  flex: 1 1 auto;
+  min-height: 0;
   position: relative;
   overflow: hidden;
   touch-action: none;
-}
-
-.indicator-pane-container--macd {
-  height: 130px;
 }
 
 /* ── Trade History Panel ──────────────────────────────────────────────────── */
