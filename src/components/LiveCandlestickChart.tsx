@@ -119,7 +119,7 @@ function makeMASeries(chart: IChartApi, color: string): ISeriesApi<'Line'> {
 }
 
 export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, livePrice, onClose }: Props) {
-  const [interval, setInterval] = useState<CandleInterval>('1m');
+  const [interval, setInterval] = useState<CandleInterval>('1h');
   const [reloadKey, setReloadKey] = useState(0);
   const { initialCandles, candleUpdate, loading, error } = useLiveCandlesticks(symbol, interval, reloadKey);
 
