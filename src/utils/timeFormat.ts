@@ -1,4 +1,4 @@
-import { UTCTimestamp } from 'lightweight-charts';
+import { TickMarkType, UTCTimestamp } from 'lightweight-charts';
 
 const IST_TZ = 'Asia/Kolkata';
 
@@ -6,16 +6,27 @@ function toIstDate(time: UTCTimestamp): Date {
   return new Date((time as number) * 1000);
 }
 
-export function formatIstTick(time: UTCTimestamp, secondsVisible: boolean, dateOnly: boolean): string {
+// Ticks that land on a day/month/year boundary are rendered as a date
+// instead of a time — otherwise a hint like "1h" candles only ever show
+// the hour, so a day rollover is indistinguishable from any other tick.
+export function formatIstTick(time: UTCTimestamp, tickMarkType: TickMarkType, dateOnly: boolean): string {
   const d = toIstDate(time);
-  if (dateOnly) {
-    return d.toLocaleDateString('en-GB', { timeZone: IST_TZ, day: '2-digit', month: 'short' });
+  const isDateBoundary = tickMarkType === TickMarkType.Year
+    || tickMarkType === TickMarkType.Month
+    || tickMarkType === TickMarkType.DayOfMonth;
+  if (dateOnly || isDateBoundary) {
+    return d.toLocaleDateString('en-GB', {
+      timeZone: IST_TZ,
+      day: '2-digit',
+      month: 'short',
+      year: tickMarkType === TickMarkType.Year ? 'numeric' : undefined,
+    });
   }
   return d.toLocaleTimeString('en-GB', {
     timeZone: IST_TZ,
     hour: '2-digit',
     minute: '2-digit',
-    second: secondsVisible ? '2-digit' : undefined,
+    second: tickMarkType === TickMarkType.TimeWithSeconds ? '2-digit' : undefined,
     hour12: false,
   });
 }
