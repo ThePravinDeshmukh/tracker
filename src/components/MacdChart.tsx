@@ -1,5 +1,5 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { createChart, ColorType, IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
+import { createChart, ColorType, IChartApi, ISeriesApi, TickMarkType, UTCTimestamp } from 'lightweight-charts';
 import { MACDPoint, MACD_FAST_PERIOD, MACD_SLOW_PERIOD, MACD_SIGNAL_PERIOD, WhitespacePoint } from '../utils/indicators';
 import { formatIstTick, formatIstCrosshair } from '../utils/timeFormat';
 
@@ -64,7 +64,8 @@ const MacdChart = forwardRef<MacdChartHandle, Props>(function MacdChart({ second
         borderColor: CHART_BORDER,
         timeVisible: !dateOnly,
         secondsVisible,
-        tickMarkFormatter: (time: UTCTimestamp) => formatIstTick(time, secondsVisible, dateOnly),
+        tickMarkFormatter: (time: UTCTimestamp, tickMarkType: TickMarkType) =>
+          formatIstTick(time, tickMarkType, dateOnly),
       },
       handleScroll: true,
       handleScale: true,
@@ -119,7 +120,8 @@ const MacdChart = forwardRef<MacdChartHandle, Props>(function MacdChart({ second
     });
     chartRef.current?.applyOptions({
       timeScale: {
-        tickMarkFormatter: (time: UTCTimestamp) => formatIstTick(time, secondsVisible, dateOnly),
+        tickMarkFormatter: (time: UTCTimestamp, tickMarkType: TickMarkType) =>
+          formatIstTick(time, tickMarkType, dateOnly),
       },
       localization: {
         timeFormatter: (time: UTCTimestamp) => formatIstCrosshair(time, secondsVisible),

@@ -6,6 +6,7 @@ import {
   LineStyle,
   IChartApi,
   ISeriesApi,
+  TickMarkType,
   UTCTimestamp,
   MouseEventParams,
   LogicalRange,
@@ -191,8 +192,11 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
         borderColor: CHART_BORDER,
         timeVisible: true,
         secondsVisible: false,
-        tickMarkFormatter: (time: UTCTimestamp) =>
-          formatIstTick(time, false, false),
+        // Time labels only appear on the bottom-most pane (MACD) — see
+        // MacdChart.tsx — so this pane's own axis stays hidden.
+        visible: false,
+        tickMarkFormatter: (time: UTCTimestamp, tickMarkType: TickMarkType) =>
+          formatIstTick(time, tickMarkType, false),
       },
       handleScroll: true,
       handleScale: true,
@@ -288,8 +292,8 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     });
     chartRef.current?.applyOptions({
       timeScale: {
-        tickMarkFormatter: (time: UTCTimestamp) =>
-          formatIstTick(time, secondsVisible, dateOnly),
+        tickMarkFormatter: (time: UTCTimestamp, tickMarkType: TickMarkType) =>
+          formatIstTick(time, tickMarkType, dateOnly),
       },
       localization: {
         timeFormatter: (time: UTCTimestamp) =>

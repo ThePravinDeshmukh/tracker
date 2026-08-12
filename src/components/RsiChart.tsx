@@ -1,5 +1,5 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { createChart, ColorType, IChartApi, ISeriesApi, LineStyle, UTCTimestamp } from 'lightweight-charts';
+import { createChart, ColorType, IChartApi, ISeriesApi, LineStyle, TickMarkType, UTCTimestamp } from 'lightweight-charts';
 import { MAPoint, RSI_PERIOD, WhitespacePoint } from '../utils/indicators';
 import { formatIstTick, formatIstCrosshair } from '../utils/timeFormat';
 
@@ -54,7 +54,11 @@ const RsiChart = forwardRef<RsiChartHandle, Props>(function RsiChart({ secondsVi
         borderColor: CHART_BORDER,
         timeVisible: !dateOnly,
         secondsVisible,
-        tickMarkFormatter: (time: UTCTimestamp) => formatIstTick(time, secondsVisible, dateOnly),
+        // Time labels only appear on the bottom-most pane (MACD) — see
+        // MacdChart.tsx — so this pane's own axis stays hidden.
+        visible: false,
+        tickMarkFormatter: (time: UTCTimestamp, tickMarkType: TickMarkType) =>
+          formatIstTick(time, tickMarkType, dateOnly),
       },
       handleScroll: true,
       handleScale: true,
@@ -114,7 +118,8 @@ const RsiChart = forwardRef<RsiChartHandle, Props>(function RsiChart({ secondsVi
     });
     chartRef.current?.applyOptions({
       timeScale: {
-        tickMarkFormatter: (time: UTCTimestamp) => formatIstTick(time, secondsVisible, dateOnly),
+        tickMarkFormatter: (time: UTCTimestamp, tickMarkType: TickMarkType) =>
+          formatIstTick(time, tickMarkType, dateOnly),
       },
       localization: {
         timeFormatter: (time: UTCTimestamp) => formatIstCrosshair(time, secondsVisible),
