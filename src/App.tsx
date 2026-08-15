@@ -2,7 +2,9 @@ import React, { useState, useMemo, useEffect } from 'react';
 import './App.css';
 import { usePortfolio } from './hooks/usePortfolio';
 import { useWatchlist } from './hooks/useWatchlist';
+import { useTopVolumeCoins } from './hooks/useTopVolumeCoins';
 import { useCryptoPrices } from './hooks/useCryptoPrices';
+import { mergeWatchlist } from './utils/watchlist';
 import HoldingRow from './components/HoldingRow';
 import AddEditModal from './components/AddEditModal';
 import WatchlistPanel from './components/WatchlistPanel';
@@ -53,7 +55,13 @@ function sortHoldings(holdings: EnrichedHolding[], sortBy: SortKey): EnrichedHol
 export default function App() {
   const { holdings, addOrUpdateHolding, addToHolding, removeHolding } = usePortfolio();
   const { watchlist, addToWatchlist, removeFromWatchlist } = useWatchlist();
+  const { topVolumeCoins } = useTopVolumeCoins();
   const { trades, addTrade, clearHistory } = useTradeHistory();
+
+  const displayWatchlist = useMemo(
+    () => mergeWatchlist(topVolumeCoins, watchlist),
+    [topVolumeCoins, watchlist]
+  );
 
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => holdings.length === 0 ? 'watchlist' : 'holdings');
   const [showModal, setShowModal] = useState(false);
@@ -67,8 +75,8 @@ export default function App() {
   const [focusSymbol, setFocusSymbol] = useState<string | null>(null);
 
   const allSymbols = useMemo(
-    () => Array.from(new Set([...holdings.map(h => h.symbol), ...watchlist])),
-    [holdings, watchlist]
+    () => Array.from(new Set([...holdings.map(h => h.symbol), ...displayWatchlist])),
+    [holdings, displayWatchlist]
   );
 
   const { prices, prevPrices, volumes, change24h, high24h, low24h, trades24h } = useCryptoPrices(allSymbols);
@@ -208,7 +216,8 @@ export default function App() {
           {/* Watchlist tab */}
           {activeTab === 'watchlist' && (
             <WatchlistPanel
-              watchlist={watchlist}
+              watchlist={displayWatchlist}
+              userAddedSymbols={watchlist}
               prices={prices}
               prevPrices={prevPrices}
               change24h={change24h}
@@ -298,7 +307,7 @@ export default function App() {
           onClick={() => { handleCloseChart(); setActiveTab('watchlist'); }}
         >
           Watchlist
-          {watchlist.length > 0 && <span className="tab-count">{watchlist.length}</span>}
+          {displayWatchlist.length > 0 && <span className="tab-count">{displayWatchlist.length}</span>}
         </button>
         <button
           className={`bottom-nav-btn${activeTab === 'history' ? ' active' : ''}`}

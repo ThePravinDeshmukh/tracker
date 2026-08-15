@@ -15,6 +15,7 @@ function sortWatchlist(symbols: string[], sortBy: WatchlistSortKey, prices: Pric
 
 interface Props {
   watchlist: string[];
+  userAddedSymbols: string[];
   prices: PriceMap;
   prevPrices: PriceMap;
   change24h: PriceMap;
@@ -51,7 +52,7 @@ const POPULAR_COINS = [
   'HUSDT',
 ];
 
-export default function WatchlistPanel({ watchlist, prices, prevPrices, change24h, volumes, high24h, low24h, trades24h, momentumRows, onAdd, onRemove, onViewChart }: Props) {
+export default function WatchlistPanel({ watchlist, userAddedSymbols, prices, prevPrices, change24h, volumes, high24h, low24h, trades24h, momentumRows, onAdd, onRemove, onViewChart }: Props) {
   const [search, setSearch] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [sortBy, setSortBy] = useState<WatchlistSortKey>('volume');
@@ -171,6 +172,7 @@ export default function WatchlistPanel({ watchlist, prices, prevPrices, change24
             const priceDir  = hasChange ? (changePct > 0 ? 'pos' : changePct < 0 ? 'neg' : '') : '';
             const isExpanded = expandedSymbol === symbol;
             const momentumRow = momentumRows.find(r => r.symbol === symbol);
+            const isUserAdded = userAddedSymbols.includes(symbol);
 
             const handleRowClick = (): void => {
               setExpandedSymbol(isExpanded ? null : symbol);
@@ -205,13 +207,19 @@ export default function WatchlistPanel({ watchlist, prices, prevPrices, change24
                     {fmtVolume(volumes[symbol])}
                   </span>
                   <span className={`watchlist-chevron${isExpanded ? ' open' : ''}`}>▶</span>
-                  <button
-                    className="btn-icon del"
-                    onClick={e => { e.stopPropagation(); onRemove(symbol); }}
-                    title={`Remove ${symbol}`}
-                  >
-                    ×
-                  </button>
+                  {isUserAdded ? (
+                    <button
+                      className="btn-icon del"
+                      onClick={e => { e.stopPropagation(); onRemove(symbol); }}
+                      title={`Remove ${symbol}`}
+                    >
+                      ×
+                    </button>
+                  ) : (
+                    <span className="watchlist-default-badge" title="Top 10 by 24h volume">
+                      TOP10
+                    </span>
+                  )}
                 </div>
                 {isExpanded && (
                   <CryptoDetailPanel
