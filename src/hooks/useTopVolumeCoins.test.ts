@@ -22,4 +22,21 @@ describe('selectTopVolumeSymbols', () => {
     const tickers = [{ symbol: 'BTCUSDT', quoteVolume: '500000000' }];
     expect(selectTopVolumeSymbols(tickers, 10)).toEqual(['BTCUSDT']);
   });
+
+  it('restricts ranking to allowedBaseAssets when provided', () => {
+    const tickers = [
+      { symbol: 'BTCUSDT', quoteVolume: '500000000' },
+      { symbol: 'ETHUSDT', quoteVolume: '900000000' },
+      { symbol: 'PEPEUSDT', quoteVolume: '100000000' },
+    ];
+    expect(selectTopVolumeSymbols(tickers, 5, ['BTC', 'PEPE'])).toEqual(['BTCUSDT', 'PEPEUSDT']);
+  });
+
+  it('ranks across all USDT pairs when allowedBaseAssets is null', () => {
+    const tickers = [
+      { symbol: 'BTCUSDT', quoteVolume: '500000000' },
+      { symbol: 'ETHUSDT', quoteVolume: '900000000' },
+    ];
+    expect(selectTopVolumeSymbols(tickers, 5, null)).toEqual(['ETHUSDT', 'BTCUSDT']);
+  });
 });
