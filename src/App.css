@@ -219,6 +219,17 @@
   text-align: center;
 }
 
+.watchlist-group-divider {
+  padding: 6px 24px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+
 .watchlist-asset {
   display: flex;
   align-items: center;
