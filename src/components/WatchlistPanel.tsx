@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { PriceMap, WatchlistSortKey, MomentumRow } from '../types';
 import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
 import { useAvailablePairs } from '../hooks/useAvailablePairs';
+import { filterByDeltaAvailability } from '../utils/watchlist';
 import CryptoDetailPanel from './CryptoDetailPanel';
 
 function sortWatchlist(symbols: string[], sortBy: WatchlistSortKey, prices: PriceMap, change24h: PriceMap, volumes: PriceMap): string[] {
@@ -16,6 +17,7 @@ function sortWatchlist(symbols: string[], sortBy: WatchlistSortKey, prices: Pric
 interface Props {
   watchlist: string[];
   userAddedSymbols: string[];
+  deltaTradableAssets: string[] | null;
   prices: PriceMap;
   prevPrices: PriceMap;
   change24h: PriceMap;
@@ -52,7 +54,7 @@ const POPULAR_COINS = [
   'HUSDT',
 ];
 
-export default function WatchlistPanel({ watchlist, userAddedSymbols, prices, prevPrices, change24h, volumes, high24h, low24h, trades24h, momentumRows, onAdd, onRemove, onViewChart }: Props) {
+export default function WatchlistPanel({ watchlist, userAddedSymbols, deltaTradableAssets, prices, prevPrices, change24h, volumes, high24h, low24h, trades24h, momentumRows, onAdd, onRemove, onViewChart }: Props) {
   const [search, setSearch] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [sortBy, setSortBy] = useState<WatchlistSortKey>('volume');
@@ -65,7 +67,7 @@ export default function WatchlistPanel({ watchlist, userAddedSymbols, prices, pr
   // Use API symbols when loaded, fall back to popular coins
   const symbolPool = allSymbols.length > 0 ? allSymbols : POPULAR_COINS;
 
-  const suggestions = symbolPool
+  const suggestions = filterByDeltaAvailability(symbolPool, deltaTradableAssets)
     .filter(s => !watchlist.includes(s))
     .filter(s => search === '' || s.includes(search.toUpperCase()))
     .slice(0, 40);

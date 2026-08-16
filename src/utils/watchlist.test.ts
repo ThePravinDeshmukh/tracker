@@ -1,4 +1,4 @@
-import { mergeWatchlist, isUserAddedSymbol } from './watchlist';
+import { mergeWatchlist, isUserAddedSymbol, baseAssetOf, filterByDeltaAvailability } from './watchlist';
 
 describe('mergeWatchlist', () => {
   it('returns default symbols when the user has added nothing', () => {
@@ -35,5 +35,33 @@ describe('isUserAddedSymbol', () => {
 
   it('returns false when the symbol is not in the user-added list', () => {
     expect(isUserAddedSymbol('BTCUSDT', ['PEPEUSDT'])).toBe(false);
+  });
+});
+
+describe('baseAssetOf', () => {
+  it('strips the USDT suffix', () => {
+    expect(baseAssetOf('BTCUSDT')).toBe('BTC');
+  });
+
+  it('leaves a symbol without a USDT suffix unchanged', () => {
+    expect(baseAssetOf('BTC')).toBe('BTC');
+  });
+});
+
+describe('filterByDeltaAvailability', () => {
+  it('returns symbols unchanged while the Delta asset list is unknown', () => {
+    expect(filterByDeltaAvailability(['BTCUSDT', 'PEPEUSDT'], null)).toEqual([
+      'BTCUSDT', 'PEPEUSDT',
+    ]);
+  });
+
+  it('keeps only symbols whose base asset trades on Delta Exchange India', () => {
+    expect(filterByDeltaAvailability(['BTCUSDT', 'PEPEUSDT', 'ETHUSDT'], ['BTC', 'ETH'])).toEqual([
+      'BTCUSDT', 'ETHUSDT',
+    ]);
+  });
+
+  it('returns an empty array when nothing matches', () => {
+    expect(filterByDeltaAvailability(['PEPEUSDT'], ['BTC', 'ETH'])).toEqual([]);
   });
 });

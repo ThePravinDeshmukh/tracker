@@ -3,6 +3,7 @@ import './App.css';
 import { usePortfolio } from './hooks/usePortfolio';
 import { useWatchlist } from './hooks/useWatchlist';
 import { useTopVolumeCoins } from './hooks/useTopVolumeCoins';
+import { useDeltaExchangeAssets } from './hooks/useDeltaExchangeAssets';
 import { useCryptoPrices } from './hooks/useCryptoPrices';
 import { mergeWatchlist } from './utils/watchlist';
 import HoldingRow from './components/HoldingRow';
@@ -55,7 +56,8 @@ function sortHoldings(holdings: EnrichedHolding[], sortBy: SortKey): EnrichedHol
 export default function App() {
   const { holdings, addOrUpdateHolding, addToHolding, removeHolding } = usePortfolio();
   const { watchlist, addToWatchlist, removeFromWatchlist } = useWatchlist();
-  const { topVolumeCoins } = useTopVolumeCoins();
+  const { deltaTradableAssets } = useDeltaExchangeAssets();
+  const { topVolumeCoins } = useTopVolumeCoins(10, deltaTradableAssets);
   const { trades, addTrade, clearHistory } = useTradeHistory();
 
   const displayWatchlist = useMemo(
@@ -218,6 +220,7 @@ export default function App() {
             <WatchlistPanel
               watchlist={displayWatchlist}
               userAddedSymbols={watchlist}
+              deltaTradableAssets={deltaTradableAssets}
               prices={prices}
               prevPrices={prevPrices}
               change24h={change24h}
