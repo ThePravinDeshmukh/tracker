@@ -15,6 +15,7 @@ import LiveCandlestickChart from './components/LiveCandlestickChart';
 import CloseTradeModal from './components/CloseTradeModal';
 import AddToPositionModal from './components/AddToPositionModal';
 import { useMomentum } from './hooks/useMomentum';
+import { useMarketMovers } from './hooks/useMarketMovers';
 import MarketPulseSidebar from './components/MarketPulseSidebar';
 import PriceFocusView from './components/PriceFocusView';
 import { useTradeHistory } from './hooks/useTradeHistory';
@@ -59,6 +60,7 @@ export default function App() {
   const { deltaTradableAssets } = useDeltaExchangeAssets();
   const { topVolumeCoins } = useTopVolumeCoins(10, deltaTradableAssets);
   const { trades, addTrade, clearHistory } = useTradeHistory();
+  const { topByVolume, topGainers, topLosers } = useMarketMovers();
 
   const displayWatchlist = useMemo(
     () => mergeWatchlist(topVolumeCoins, watchlist),
@@ -258,6 +260,9 @@ export default function App() {
         isOpen={pulseOpen}
         onClose={() => setPulseOpen(false)}
         stressEvents={stressEvents}
+        topByVolume={topByVolume}
+        topGainers={topGainers}
+        topLosers={topLosers}
       />
 
       {showModal && (
