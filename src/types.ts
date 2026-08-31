@@ -65,6 +65,15 @@ export interface StressEvent {
   triggeredAt: number;    // unix ms
 }
 
+// --- Market Movers (top volume / gainers / losers) ---
+
+export interface MarketMover {
+  symbol: string;
+  price: number;
+  priceChangePct: number; // 24h change, e.g. 4.2 means +4.2%
+  quoteVolume: number;    // 24h quote asset volume in USDT
+}
+
 // --- Live Candlestick Chart ---
 
 export interface CandlePoint {

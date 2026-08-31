@@ -1337,6 +1337,30 @@
 .stress-time   { font-size: 11px; }
 
 
+/* ── Market Movers (top volume / gainers / losers) ────────────────────────── */
+.mover-list {
+  display: flex;
+  flex-direction: column;
+}
+.mover-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.mover-row:last-child { border-bottom: none; }
+.mover-symbol {
+  flex: 1;
+  font-weight: 600;
+  color: var(--text);
+}
+.mover-price   { font-size: 12px; }
+.mover-volume  { font-size: 12px; }
+.mover-change  { font-weight: 700; }
+
+
 /* ── Network Console Panel ────────────────────────────────────────────────── */
 
 .app { padding-bottom: 56px; }
