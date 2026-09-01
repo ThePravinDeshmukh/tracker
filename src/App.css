@@ -154,6 +154,29 @@
 .watchlist-panel {
   padding: 0;
 }
+.watchlist-view-toggle {
+  display: flex;
+  gap: 6px;
+  padding: 12px 24px 0;
+}
+.watchlist-view-btn {
+  flex: 1;
+  padding: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.watchlist-view-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
 .watchlist-add-row {
   display: flex;
   align-items: center;

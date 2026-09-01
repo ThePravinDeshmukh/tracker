@@ -1,24 +1,17 @@
 import React from 'react';
-import { StressEvent, MarketMover } from '../types';
+import { StressEvent } from '../types';
 import StressFeed from './StressFeed';
-import MarketMoversPanel from './MarketMoversPanel';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   stressEvents: StressEvent[];
-  topByVolume: MarketMover[];
-  topGainers: MarketMover[];
-  topLosers: MarketMover[];
 }
 
 export default function MarketPulseSidebar({
   isOpen,
   onClose,
   stressEvents,
-  topByVolume,
-  topGainers,
-  topLosers,
 }: Props) {
   return (
     <>
@@ -42,12 +35,6 @@ export default function MarketPulseSidebar({
             </div>
             <StressFeed events={stressEvents} />
           </div>
-
-          <MarketMoversPanel
-            topByVolume={topByVolume}
-            topGainers={topGainers}
-            topLosers={topLosers}
-          />
         </div>
       </div>
     </>

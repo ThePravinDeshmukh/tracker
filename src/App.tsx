@@ -231,6 +231,9 @@ export default function App() {
               low24h={low24h}
               trades24h={trades24h}
               momentumRows={momentumRows}
+              topByVolume={topByVolume}
+              topGainers={topGainers}
+              topLosers={topLosers}
               onAdd={addToWatchlist}
               onRemove={removeFromWatchlist}
               onViewChart={handleViewChart}
@@ -260,9 +263,6 @@ export default function App() {
         isOpen={pulseOpen}
         onClose={() => setPulseOpen(false)}
         stressEvents={stressEvents}
-        topByVolume={topByVolume}
-        topGainers={topGainers}
-        topLosers={topLosers}
       />
 
       {showModal && (

@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PriceMap, WatchlistSortKey, MomentumRow } from '../types';
+import { PriceMap, WatchlistSortKey, MomentumRow, MarketMover } from '../types';
 import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
 import { useAvailablePairs } from '../hooks/useAvailablePairs';
 import { filterByDeltaAvailability } from '../utils/watchlist';
 import CryptoDetailPanel from './CryptoDetailPanel';
+import MarketMoversPanel from './MarketMoversPanel';
+
+type WatchlistView = 'watching' | 'movers';
 
 function sortWatchlist(symbols: string[], sortBy: WatchlistSortKey, prices: PriceMap, change24h: PriceMap, volumes: PriceMap): string[] {
   return [...symbols].sort((a, b) => {
@@ -26,6 +29,9 @@ interface Props {
   low24h: PriceMap;
   trades24h: Record<string, number>;
   momentumRows: MomentumRow[];
+  topByVolume: MarketMover[];
+  topGainers: MarketMover[];
+  topLosers: MarketMover[];
   onAdd: (symbol: string) => void;
   onRemove: (symbol: string) => void;
   onViewChart: (symbol: string) => void;
@@ -54,11 +60,12 @@ const POPULAR_COINS = [
   'HUSDT',
 ];
 
-export default function WatchlistPanel({ watchlist, userAddedSymbols, deltaTradableAssets, prices, prevPrices, change24h, volumes, high24h, low24h, trades24h, momentumRows, onAdd, onRemove, onViewChart }: Props) {
+export default function WatchlistPanel({ watchlist, userAddedSymbols, deltaTradableAssets, prices, prevPrices, change24h, volumes, high24h, low24h, trades24h, momentumRows, topByVolume, topGainers, topLosers, onAdd, onRemove, onViewChart }: Props) {
   const [search, setSearch] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [sortBy, setSortBy] = useState<WatchlistSortKey>('volume');
   const [expandedSymbol, setExpandedSymbol] = useState<string | null>(null);
+  const [view, setView] = useState<WatchlistView>('watching');
   const inputRef = useRef<HTMLInputElement>(null);
   const { allSymbols, loading } = useAvailablePairs();
 
@@ -95,22 +102,44 @@ export default function WatchlistPanel({ watchlist, userAddedSymbols, deltaTrada
     setSearch('');
   };
 
-  if (sorted.length === 0 && !showInput) {
-    return (
-      <div className="empty-state">
-        <div className="empty-icon">◉</div>
-        <p>No watchlist coins yet</p>
-        <p className="empty-sub">Add coins to monitor their live prices and momentum</p>
-        <button className="btn primary" onClick={() => setShowInput(true)}>+ Add Coin</button>
-      </div>
-    );
-  }
-
   return (
     <div className="watchlist-panel">
 
+      {/* View toggle: personal watchlist vs. market-wide movers */}
+      <div className="watchlist-view-toggle">
+        <button
+          className={`watchlist-view-btn${view === 'watching' ? ' active' : ''}`}
+          onClick={() => setView('watching')}
+        >
+          Watching
+        </button>
+        <button
+          className={`watchlist-view-btn${view === 'movers' ? ' active' : ''}`}
+          onClick={() => setView('movers')}
+        >
+          Movers
+        </button>
+      </div>
+
+      {view === 'movers' && (
+        <MarketMoversPanel
+          topByVolume={topByVolume}
+          topGainers={topGainers}
+          topLosers={topLosers}
+        />
+      )}
+
+      {view === 'watching' && sorted.length === 0 && !showInput && (
+        <div className="empty-state">
+          <div className="empty-icon">◉</div>
+          <p>No watchlist coins yet</p>
+          <p className="empty-sub">Add coins to monitor their live prices and momentum</p>
+          <button className="btn primary" onClick={() => setShowInput(true)}>+ Add Coin</button>
+        </div>
+      )}
+
       {/* Add coin search bar */}
-      {showInput ? (
+      {view === 'watching' && (showInput ? (
         <>
           <div className="watchlist-add-bar">
             <input
@@ -160,10 +189,10 @@ export default function WatchlistPanel({ watchlist, userAddedSymbols, deltaTrada
           </select>
           <button className="btn primary" onClick={() => setShowInput(true)}>+ Add Coin</button>
         </div>
-      )}
+      ))}
 
       {/* Coin list */}
-      {sorted.length > 0 && !showInput && (
+      {view === 'watching' && sorted.length > 0 && !showInput && (
         <>
           <div className="watchlist-header">
             <span>Asset</span>
