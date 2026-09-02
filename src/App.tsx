@@ -58,9 +58,9 @@ export default function App() {
   const { holdings, addOrUpdateHolding, addToHolding, removeHolding } = usePortfolio();
   const { watchlist, addToWatchlist, removeFromWatchlist } = useWatchlist();
   const { deltaTradableAssets } = useDeltaExchangeAssets();
-  const { topVolumeCoins } = useTopVolumeCoins(10, deltaTradableAssets);
+  const { topVolumeCoins } = useTopVolumeCoins(20, deltaTradableAssets);
   const { trades, addTrade, clearHistory } = useTradeHistory();
-  const { topByVolume, topGainers, topLosers } = useMarketMovers();
+  const { topGainers, topLosers } = useMarketMovers();
 
   const displayWatchlist = useMemo(
     () => mergeWatchlist(topVolumeCoins, watchlist),
@@ -231,7 +231,6 @@ export default function App() {
               low24h={low24h}
               trades24h={trades24h}
               momentumRows={momentumRows}
-              topByVolume={topByVolume}
               topGainers={topGainers}
               topLosers={topLosers}
               onAdd={addToWatchlist}

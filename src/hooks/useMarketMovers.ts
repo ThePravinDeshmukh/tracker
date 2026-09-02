@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { MarketMover } from '../types';
 
 const FUTURES_TICKER24_URL = 'https://fapi.binance.com/fapi/v1/ticker/24hr';
-const TOP_VOLUME_COUNT = 20;
 const TOP_MOVER_COUNT = 10;
 const REFRESH_INTERVAL_MS = 5 * 60_000;
 
@@ -23,7 +22,6 @@ function toMarketMover(ticker: Ticker24hStats): MarketMover {
 }
 
 export interface MarketMoversResult {
-  topByVolume: MarketMover[];
   topGainers: MarketMover[];
   topLosers: MarketMover[];
 }
@@ -33,10 +31,6 @@ export function deriveMarketMovers(tickers: Ticker24hStats[]): MarketMoversResul
     .filter(ticker => ticker.symbol.endsWith('USDT'))
     .map(toMarketMover);
 
-  const topByVolume = [...usdtMovers]
-    .sort((a, b) => b.quoteVolume - a.quoteVolume)
-    .slice(0, TOP_VOLUME_COUNT);
-
   const topGainers = [...usdtMovers]
     .sort((a, b) => b.priceChangePct - a.priceChangePct)
     .slice(0, TOP_MOVER_COUNT);
@@ -45,7 +39,7 @@ export function deriveMarketMovers(tickers: Ticker24hStats[]): MarketMoversResul
     .sort((a, b) => a.priceChangePct - b.priceChangePct)
     .slice(0, TOP_MOVER_COUNT);
 
-  return { topByVolume, topGainers, topLosers };
+  return { topGainers, topLosers };
 }
 
 async function fetchMarketMovers(): Promise<MarketMoversResult> {
@@ -55,7 +49,7 @@ async function fetchMarketMovers(): Promise<MarketMoversResult> {
   return deriveMarketMovers(tickers);
 }
 
-const EMPTY_RESULT: MarketMoversResult = { topByVolume: [], topGainers: [], topLosers: [] };
+const EMPTY_RESULT: MarketMoversResult = { topGainers: [], topLosers: [] };
 
 export function useMarketMovers(): MarketMoversResult & { loading: boolean } {
   const [movers, setMovers] = useState<MarketMoversResult>(EMPTY_RESULT);

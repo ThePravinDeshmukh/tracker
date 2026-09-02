@@ -10,15 +10,10 @@ describe('deriveMarketMovers', () => {
   ];
 
   it('excludes non-USDT pairs from every list', () => {
-    const { topByVolume, topGainers, topLosers } = deriveMarketMovers(tickers);
-    for (const mover of [...topByVolume, ...topGainers, ...topLosers]) {
+    const { topGainers, topLosers } = deriveMarketMovers(tickers);
+    for (const mover of [...topGainers, ...topLosers]) {
       expect(mover.symbol.endsWith('USDT')).toBe(true);
     }
-  });
-
-  it('ranks topByVolume by quote volume descending', () => {
-    const { topByVolume } = deriveMarketMovers(tickers);
-    expect(topByVolume.map(m => m.symbol)).toEqual(['ETHUSDT', 'BTCUSDT', 'SOLUSDT', 'PEPEUSDT']);
   });
 
   it('ranks topGainers by price change percent descending', () => {
@@ -39,15 +34,14 @@ describe('deriveMarketMovers', () => {
     expect(sol.quoteVolume).toBe(100000000);
   });
 
-  it('caps topByVolume at 20 and gainers/losers at 10', () => {
+  it('caps gainers/losers at 10', () => {
     const manyTickers = Array.from({ length: 30 }, (_, i) => ({
       symbol: `COIN${i}USDT`,
       lastPrice: '1',
       priceChangePercent: `${i}`,
       quoteVolume: `${i}`,
     }));
-    const { topByVolume, topGainers, topLosers } = deriveMarketMovers(manyTickers);
-    expect(topByVolume.length).toBe(20);
+    const { topGainers, topLosers } = deriveMarketMovers(manyTickers);
     expect(topGainers.length).toBe(10);
     expect(topLosers.length).toBe(10);
   });

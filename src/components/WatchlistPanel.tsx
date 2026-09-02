@@ -29,7 +29,6 @@ interface Props {
   low24h: PriceMap;
   trades24h: Record<string, number>;
   momentumRows: MomentumRow[];
-  topByVolume: MarketMover[];
   topGainers: MarketMover[];
   topLosers: MarketMover[];
   onAdd: (symbol: string) => void;
@@ -60,7 +59,7 @@ const POPULAR_COINS = [
   'HUSDT',
 ];
 
-export default function WatchlistPanel({ watchlist, userAddedSymbols, deltaTradableAssets, prices, prevPrices, change24h, volumes, high24h, low24h, trades24h, momentumRows, topByVolume, topGainers, topLosers, onAdd, onRemove, onViewChart }: Props) {
+export default function WatchlistPanel({ watchlist, userAddedSymbols, deltaTradableAssets, prices, prevPrices, change24h, volumes, high24h, low24h, trades24h, momentumRows, topGainers, topLosers, onAdd, onRemove, onViewChart }: Props) {
   const [search, setSearch] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [sortBy, setSortBy] = useState<WatchlistSortKey>('volume');
@@ -123,7 +122,6 @@ export default function WatchlistPanel({ watchlist, userAddedSymbols, deltaTrada
 
       {view === 'movers' && (
         <MarketMoversPanel
-          topByVolume={topByVolume}
           topGainers={topGainers}
           topLosers={topLosers}
         />
@@ -219,7 +217,7 @@ export default function WatchlistPanel({ watchlist, userAddedSymbols, deltaTrada
             return (
               <React.Fragment key={symbol}>
                 {showGroupDivider && index === manualSorted.length && (
-                  <div className="watchlist-group-divider">Top 10 by Volume</div>
+                  <div className="watchlist-group-divider">Top 20 by Volume</div>
                 )}
                 <div className={`watchlist-row-wrap${isExpanded ? ' expanded' : ''}`}>
                   <div
@@ -258,8 +256,8 @@ export default function WatchlistPanel({ watchlist, userAddedSymbols, deltaTrada
                         ×
                       </button>
                     ) : (
-                      <span className="watchlist-default-badge" title="Top 10 by 24h volume">
-                        TOP10
+                      <span className="watchlist-default-badge" title="Top 20 by 24h volume">
+                        TOP20
                       </span>
                     )}
                   </div>
