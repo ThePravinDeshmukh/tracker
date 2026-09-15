@@ -32,6 +32,7 @@ import {
   MACD_SIGNAL_PERIOD,
 } from '../utils/indicators';
 import { formatIstTick, formatIstCrosshair } from '../utils/timeFormat';
+import { candleColorOptions, CANDLE_UP_COLOR, CANDLE_DOWN_COLOR } from '../utils/candleStyle';
 import RsiChart, { RsiChartHandle } from './RsiChart';
 import MacdChart, { MacdChartHandle } from './MacdChart';
 
@@ -62,8 +63,6 @@ const TIMEFRAMES: { key: CandleInterval; label: string }[] = [
   { key: '1d', label: '1d' },
 ];
 
-const CANDLE_UP = '#0ECB81';
-const CANDLE_DOWN = '#F6465D';
 const VOL_UP = 'rgba(14,203,129,0.4)';
 const VOL_DOWN = 'rgba(246,70,93,0.4)';
 const CHART_BG = '#0b0e11';
@@ -120,6 +119,7 @@ function makeMASeries(chart: IChartApi, color: string): ISeriesApi<'Line'> {
 
 export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, livePrice, onClose }: Props) {
   const [interval, setInterval] = useState<CandleInterval>('1h');
+  const [showCandles, setShowCandles] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
   const { initialCandles, candleUpdate, loading, error } = useLiveCandlesticks(symbol, interval, reloadKey);
 
@@ -203,12 +203,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     });
 
     const candleSeries = chart.addCandlestickSeries({
-      upColor: CANDLE_UP,
-      downColor: CANDLE_DOWN,
-      borderUpColor: CANDLE_UP,
-      borderDownColor: CANDLE_DOWN,
-      wickUpColor: CANDLE_UP,
-      wickDownColor: CANDLE_DOWN,
+      ...candleColorOptions('shown'),
       priceLineVisible: true,
       priceLineWidth: 1,
       priceLineColor: CHART_TEXT,
@@ -283,6 +278,12 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
       currentCandleRef.current = null;
     };
   }, []); // eslint-disable-line
+
+  // Show or hide the candles without touching the moving averages, volume,
+  // RSI and MACD that are layered on the same data.
+  useEffect(() => {
+    candleSeriesRef.current?.applyOptions(candleColorOptions(showCandles ? 'shown' : 'hidden'));
+  }, [showCandles]);
 
   // Update timeScale options when interval changes
   useEffect(() => {
@@ -566,6 +567,10 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     setInterval(newInterval);
   }, []);
 
+  const handleToggleCandles = useCallback(() => {
+    setShowCandles(visible => !visible);
+  }, []);
+
   const handleRefresh = useCallback(() => {
     initializedRef.current = false;
     hasInitialBarRef.current = false;
@@ -587,7 +592,7 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
     ? { open: candleUpdate.open, high: candleUpdate.high, low: candleUpdate.low, close: candleUpdate.close, volume: candleUpdate.volume }
     : null);
 
-  const ohlcvColor = displayOhlcv && displayOhlcv.close >= displayOhlcv.open ? CANDLE_UP : CANDLE_DOWN;
+  const ohlcvColor = displayOhlcv && displayOhlcv.close >= displayOhlcv.open ? CANDLE_UP_COLOR : CANDLE_DOWN_COLOR;
 
   return (
     <div className="live-chart-overlay">
@@ -609,16 +614,25 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
           </div>
         )}
 
-        <button
-          className="live-chart-close"
-          onClick={handleRefresh}
-          title="Refresh"
-          disabled={loading}
-          style={{ marginRight: 8 }}
-        >
-          ⟳
-        </button>
-        <button className="live-chart-close" onClick={onClose} title="Close">✕</button>
+        <div className="live-chart-header-actions">
+          <button
+            className={`live-chart-header-btn live-chart-candles-toggle${showCandles ? ' active' : ''}`}
+            onClick={handleToggleCandles}
+            title={showCandles ? 'Hide candles' : 'Show candles'}
+            aria-pressed={showCandles}
+          >
+            Candles
+          </button>
+          <button
+            className="live-chart-header-btn"
+            onClick={handleRefresh}
+            title="Refresh"
+            disabled={loading}
+          >
+            ⟳
+          </button>
+          <button className="live-chart-header-btn" onClick={onClose} title="Close">✕</button>
+        </div>
       </div>
 
       {/* Timeframe strip */}
@@ -641,9 +655,9 @@ export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, liveP
             <span style={{ color: CHART_TEXT }}>O</span>
             <span style={{ color: ohlcvColor }}>{fmtPrice(displayOhlcv.open)}</span>
             <span style={{ color: CHART_TEXT }}>H</span>
-            <span style={{ color: CANDLE_UP }}>{fmtPrice(displayOhlcv.high)}</span>
+            <span style={{ color: CANDLE_UP_COLOR }}>{fmtPrice(displayOhlcv.high)}</span>
             <span style={{ color: CHART_TEXT }}>L</span>
-            <span style={{ color: CANDLE_DOWN }}>{fmtPrice(displayOhlcv.low)}</span>
+            <span style={{ color: CANDLE_DOWN_COLOR }}>{fmtPrice(displayOhlcv.low)}</span>
             <span style={{ color: CHART_TEXT }}>C</span>
             <span style={{ color: ohlcvColor }}>{fmtPrice(displayOhlcv.close)}</span>
             <span style={{ color: CHART_TEXT, marginLeft: 8 }}>Vol</span>

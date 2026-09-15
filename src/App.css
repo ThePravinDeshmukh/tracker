@@ -1614,8 +1614,15 @@
   letter-spacing: -0.02em;
 }
 
-.live-chart-close {
+.live-chart-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-left: auto;
+  flex-shrink: 0;
+}
+
+.live-chart-header-btn {
   background: none;
   border: none;
   color: #848E9C;
@@ -1626,9 +1633,26 @@
   transition: color 0.15s, background 0.15s;
   flex-shrink: 0;
 }
-.live-chart-close:hover {
+.live-chart-header-btn:hover {
   color: #fff;
   background: rgba(255,255,255,0.07);
+}
+.live-chart-header-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.live-chart-candles-toggle {
+  font-size: 12px;
+  font-family: 'Space Mono', monospace;
+  letter-spacing: 0.02em;
+  padding: 5px 10px;
+  border: 1px solid #2B3139;
+}
+.live-chart-candles-toggle.active {
+  background: #2B3139;
+  color: #F0B90B;
+  font-weight: 600;
 }
 
 .live-chart-timeframes {
