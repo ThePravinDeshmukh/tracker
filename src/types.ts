@@ -87,7 +87,8 @@ export interface CandlePoint {
   volume: number;
 }
 
-export type CandleInterval = '1s' | '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d';
+export const CANDLE_INTERVALS = ['1s', '1m', '5m', '15m', '30m', '1h', '4h', '1d'] as const;
+export type CandleInterval = typeof CANDLE_INTERVALS[number];
 
 // --- Trade History ---
 
