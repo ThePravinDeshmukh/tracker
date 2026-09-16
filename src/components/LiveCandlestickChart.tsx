@@ -11,8 +11,9 @@ import {
   MouseEventParams,
   LogicalRange,
 } from 'lightweight-charts';
-import { CandleInterval, CandlePoint } from '../types';
+import { CandleInterval, CandlePoint, CANDLE_INTERVALS } from '../types';
 import { useLiveCandlesticks } from '../hooks/useLiveCandlesticks';
+import { useChartTimeframe } from '../hooks/useChartTimeframe';
 import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
 import {
   calcEMA,
@@ -52,16 +53,7 @@ interface OhlcvInfo {
   volume: number;
 }
 
-const TIMEFRAMES: { key: CandleInterval; label: string }[] = [
-  { key: '1s', label: '1s' },
-  { key: '1m', label: '1m' },
-  { key: '5m', label: '5m' },
-  { key: '15m', label: '15m' },
-  { key: '30m', label: '30m' },
-  { key: '1h', label: '1h' },
-  { key: '4h', label: '4h' },
-  { key: '1d', label: '1d' },
-];
+const TIMEFRAMES: { key: CandleInterval; label: string }[] = CANDLE_INTERVALS.map(key => ({ key, label: key }));
 
 const VOL_UP = 'rgba(14,203,129,0.4)';
 const VOL_DOWN = 'rgba(246,70,93,0.4)';
@@ -118,7 +110,7 @@ function makeMASeries(chart: IChartApi, color: string): ISeriesApi<'Line'> {
 }
 
 export default function LiveCandlestickChart({ symbol, avgPrice, stopLoss, livePrice, onClose }: Props) {
-  const [interval, setInterval] = useState<CandleInterval>('1h');
+  const { timeframe: interval, setTimeframe: setInterval } = useChartTimeframe();
   const [showCandles, setShowCandles] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
   const { initialCandles, candleUpdate, loading, error } = useLiveCandlesticks(symbol, interval, reloadKey);
