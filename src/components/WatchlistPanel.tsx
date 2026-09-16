@@ -246,6 +246,17 @@ export default function WatchlistPanel({ watchlist, userAddedSymbols, deltaTrada
                     <span className="watchlist-volume mono muted">
                       {fmtVolume(volumes[symbol])}
                     </span>
+                    <span className="watchlist-add-slot">
+                      {!isUserAdded && (
+                        <button
+                          className="btn-icon add"
+                          onClick={e => { e.stopPropagation(); onAdd(symbol); }}
+                          title={`Add ${symbol} to watchlist`}
+                        >
+                          +
+                        </button>
+                      )}
+                    </span>
                     <span className={`watchlist-chevron${isExpanded ? ' open' : ''}`}>▶</span>
                     {isUserAdded ? (
                       <button
