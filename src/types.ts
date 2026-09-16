@@ -18,6 +18,8 @@ export interface EnrichedHolding extends Holding {
 
 export type PriceMap = Record<string, number>;
 export type VolumeMap = Record<string, number>;
+// symbol -> volume surge ratio (only present when the coin qualifies as surging)
+export type VolumeMomentumMap = Record<string, number>;
 
 export interface VolumePoint {
   time: number;

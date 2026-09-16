@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PriceMap, WatchlistSortKey, MomentumRow, MarketMover } from '../types';
+import { PriceMap, WatchlistSortKey, MomentumRow, MarketMover, VolumeMomentumMap } from '../types';
 import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
 import { useAvailablePairs } from '../hooks/useAvailablePairs';
 import { filterByDeltaAvailability } from '../utils/watchlist';
+import { MOMENTUM_WINDOW_HOURS } from '../utils/volumeMomentum';
 import CryptoDetailPanel from './CryptoDetailPanel';
 import MarketMoversPanel from './MarketMoversPanel';
 
@@ -29,6 +30,7 @@ interface Props {
   low24h: PriceMap;
   trades24h: Record<string, number>;
   momentumRows: MomentumRow[];
+  volumeMomentum: VolumeMomentumMap;
   topGainers: MarketMover[];
   topLosers: MarketMover[];
   onAdd: (symbol: string) => void;
@@ -59,7 +61,7 @@ const POPULAR_COINS = [
   'HUSDT',
 ];
 
-export default function WatchlistPanel({ watchlist, userAddedSymbols, deltaTradableAssets, prices, prevPrices, change24h, volumes, high24h, low24h, trades24h, momentumRows, topGainers, topLosers, onAdd, onRemove, onViewChart }: Props) {
+export default function WatchlistPanel({ watchlist, userAddedSymbols, deltaTradableAssets, prices, prevPrices, change24h, volumes, high24h, low24h, trades24h, momentumRows, volumeMomentum, topGainers, topLosers, onAdd, onRemove, onViewChart }: Props) {
   const [search, setSearch] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [sortBy, setSortBy] = useState<WatchlistSortKey>('volume');
@@ -245,6 +247,14 @@ export default function WatchlistPanel({ watchlist, userAddedSymbols, deltaTrada
                     </span>
                     <span className="watchlist-volume mono muted">
                       {fmtVolume(volumes[symbol])}
+                      {volumeMomentum[symbol] !== undefined && (
+                        <span
+                          className="volume-surge-badge"
+                          title={`Last ${MOMENTUM_WINDOW_HOURS}h volume is ${volumeMomentum[symbol].toFixed(1)}x the day's average pace`}
+                        >
+                          🔥 {volumeMomentum[symbol].toFixed(1)}x
+                        </span>
+                      )}
                     </span>
                     <span className="watchlist-add-slot">
                       {!isUserAdded && (

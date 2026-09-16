@@ -15,6 +15,7 @@ import LiveCandlestickChart from './components/LiveCandlestickChart';
 import CloseTradeModal from './components/CloseTradeModal';
 import AddToPositionModal from './components/AddToPositionModal';
 import { useMomentum } from './hooks/useMomentum';
+import { useVolumeMomentum } from './hooks/useVolumeMomentum';
 import { useMarketMovers } from './hooks/useMarketMovers';
 import MarketPulseSidebar from './components/MarketPulseSidebar';
 import PriceFocusView from './components/PriceFocusView';
@@ -85,6 +86,7 @@ export default function App() {
 
   const { prices, prevPrices, volumes, change24h, high24h, low24h, trades24h } = useCryptoPrices(allSymbols);
   const { momentumRows, stressEvents } = useMomentum(allSymbols, prices, volumes);
+  const volumeMomentum = useVolumeMomentum(allSymbols);
 
   const enriched = useMemo(
     () => holdings.map(h => enrichHolding(h, prices[h.symbol])),
@@ -231,6 +233,7 @@ export default function App() {
               low24h={low24h}
               trades24h={trades24h}
               momentumRows={momentumRows}
+              volumeMomentum={volumeMomentum}
               topGainers={topGainers}
               topLosers={topLosers}
               onAdd={addToWatchlist}
