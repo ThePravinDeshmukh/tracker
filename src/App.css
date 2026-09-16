@@ -298,7 +298,20 @@
 .watchlist-change { font-size: 12px; }
 .watchlist-change.pos { color: var(--green); }
 .watchlist-change.neg { color: var(--red); }
-.watchlist-volume { font-size: 12px; }
+.watchlist-volume { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; font-size: 12px; }
+
+.volume-surge-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--mono);
+  color: var(--amber);
+  background: rgba(245, 166, 35, 0.15);
+  border: 1px solid rgba(245, 166, 35, 0.3);
+  white-space: nowrap;
+}
 
 /* ── Watchlist add-bar + inline suggestions ── */
 .watchlist-add-bar {
