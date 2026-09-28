@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { baseAssetOf } from '../utils/watchlist';
 
 const FUTURES_TICKER24_URL = 'https://fapi.binance.com/fapi/v1/ticker/24hr';
-const DEFAULT_TOP_VOLUME_COUNT = 10;
+export const TOP_VOLUME_COUNT = 30;
 const REFRESH_INTERVAL_MS = 5 * 60_000;
 
 interface Ticker24hVolume {
@@ -41,7 +41,7 @@ export interface UseTopVolumeCoinsResult {
 // allowedBaseAssets narrows the ranked pool to a specific exchange's tradable assets.
 // Pass null (the default) to rank across all USDT pairs, or while that allow-list is still loading.
 export function useTopVolumeCoins(
-  count: number = DEFAULT_TOP_VOLUME_COUNT,
+  count: number = TOP_VOLUME_COUNT,
   allowedBaseAssets: string[] | null = null
 ): UseTopVolumeCoinsResult {
   const [topVolumeCoins, setTopVolumeCoins] = useState<string[]>([]);

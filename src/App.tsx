@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import './App.css';
 import { usePortfolio } from './hooks/usePortfolio';
 import { useWatchlist } from './hooks/useWatchlist';
-import { useTopVolumeCoins } from './hooks/useTopVolumeCoins';
+import { useTopVolumeCoins, TOP_VOLUME_COUNT } from './hooks/useTopVolumeCoins';
 import { useDeltaExchangeAssets } from './hooks/useDeltaExchangeAssets';
 import { useCryptoPrices } from './hooks/useCryptoPrices';
 import { mergeWatchlist } from './utils/watchlist';
@@ -16,7 +16,6 @@ import CloseTradeModal from './components/CloseTradeModal';
 import AddToPositionModal from './components/AddToPositionModal';
 import { useMomentum } from './hooks/useMomentum';
 import { useVolumeMomentum } from './hooks/useVolumeMomentum';
-import { useMarketMovers } from './hooks/useMarketMovers';
 import MarketPulseSidebar from './components/MarketPulseSidebar';
 import PriceFocusView from './components/PriceFocusView';
 import { useTradeHistory } from './hooks/useTradeHistory';
@@ -59,11 +58,10 @@ export default function App() {
   const { holdings, addOrUpdateHolding, addToHolding, removeHolding } = usePortfolio();
   const { watchlist, addToWatchlist, removeFromWatchlist } = useWatchlist();
   const { deltaTradableAssets } = useDeltaExchangeAssets();
-  const { topVolumeCoins } = useTopVolumeCoins(20, deltaTradableAssets);
+  const { topVolumeCoins } = useTopVolumeCoins(TOP_VOLUME_COUNT, deltaTradableAssets);
   const { trades, addTrade, clearHistory } = useTradeHistory();
-  const { topGainers, topLosers } = useMarketMovers();
 
-  const displayWatchlist = useMemo(
+  const priceWatchSymbols = useMemo(
     () => mergeWatchlist(topVolumeCoins, watchlist),
     [topVolumeCoins, watchlist]
   );
@@ -80,8 +78,8 @@ export default function App() {
   const [focusSymbol, setFocusSymbol] = useState<string | null>(null);
 
   const allSymbols = useMemo(
-    () => Array.from(new Set([...holdings.map(h => h.symbol), ...displayWatchlist])),
-    [holdings, displayWatchlist]
+    () => Array.from(new Set([...holdings.map(h => h.symbol), ...priceWatchSymbols])),
+    [holdings, priceWatchSymbols]
   );
 
   const { prices, prevPrices, volumes, change24h, high24h, low24h, trades24h } = useCryptoPrices(allSymbols);
@@ -222,11 +220,10 @@ export default function App() {
           {/* Watchlist tab */}
           {activeTab === 'watchlist' && (
             <WatchlistPanel
-              watchlist={displayWatchlist}
-              userAddedSymbols={watchlist}
+              watchlist={watchlist}
+              topVolumeCoins={topVolumeCoins}
               deltaTradableAssets={deltaTradableAssets}
               prices={prices}
-              prevPrices={prevPrices}
               change24h={change24h}
               volumes={volumes}
               high24h={high24h}
@@ -234,8 +231,6 @@ export default function App() {
               trades24h={trades24h}
               momentumRows={momentumRows}
               volumeMomentum={volumeMomentum}
-              topGainers={topGainers}
-              topLosers={topLosers}
               onAdd={addToWatchlist}
               onRemove={removeFromWatchlist}
               onViewChart={handleViewChart}
@@ -317,7 +312,7 @@ export default function App() {
           onClick={() => { handleCloseChart(); setActiveTab('watchlist'); }}
         >
           Watchlist
-          {displayWatchlist.length > 0 && <span className="tab-count">{displayWatchlist.length}</span>}
+          {watchlist.length > 0 && <span className="tab-count">{watchlist.length}</span>}
         </button>
         <button
           className={`bottom-nav-btn${activeTab === 'history' ? ' active' : ''}`}
