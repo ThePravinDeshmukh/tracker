@@ -1,4 +1,4 @@
-import { mergeWatchlist, isUserAddedSymbol, baseAssetOf, filterByDeltaAvailability } from './watchlist';
+import { mergeWatchlist, isUserAddedSymbol, baseAssetOf, filterByDeltaAvailability, sortWatchlistSymbols } from './watchlist';
 
 describe('mergeWatchlist', () => {
   it('returns default symbols when the user has added nothing', () => {
@@ -63,5 +63,36 @@ describe('filterByDeltaAvailability', () => {
 
   it('returns an empty array when nothing matches', () => {
     expect(filterByDeltaAvailability(['PEPEUSDT'], ['BTC', 'ETH'])).toEqual([]);
+  });
+});
+
+describe('sortWatchlistSymbols', () => {
+  const symbols = ['ETHUSDT', 'BTCUSDT', 'SOLUSDT'];
+  const marketData = {
+    prices:    { BTCUSDT: 60000, ETHUSDT: 3000, SOLUSDT: 150 },
+    change24h: { BTCUSDT: 1, ETHUSDT: -2, SOLUSDT: 5 },
+    volumes:   { BTCUSDT: 500, ETHUSDT: 900 },
+  };
+
+  it('sorts by volume descending, treating missing volume as zero', () => {
+    expect(sortWatchlistSymbols(symbols, 'volume', marketData)).toEqual(['ETHUSDT', 'BTCUSDT', 'SOLUSDT']);
+  });
+
+  it('sorts by price descending', () => {
+    expect(sortWatchlistSymbols(symbols, 'price', marketData)).toEqual(['BTCUSDT', 'ETHUSDT', 'SOLUSDT']);
+  });
+
+  it('sorts by 24h change descending', () => {
+    expect(sortWatchlistSymbols(symbols, 'change', marketData)).toEqual(['SOLUSDT', 'BTCUSDT', 'ETHUSDT']);
+  });
+
+  it('sorts by name alphabetically', () => {
+    expect(sortWatchlistSymbols(symbols, 'name', marketData)).toEqual(['BTCUSDT', 'ETHUSDT', 'SOLUSDT']);
+  });
+
+  it('does not mutate the input array', () => {
+    const input = [...symbols];
+    sortWatchlistSymbols(input, 'name', marketData);
+    expect(input).toEqual(symbols);
   });
 });

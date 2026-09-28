@@ -185,6 +185,14 @@
   border-bottom: 1px solid var(--border);
 }
 .watchlist-add-row .btn { margin-left: auto; flex-shrink: 0; }
+.watchlist-view-title {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
 .watchlist-search-wrap {
   display: flex;
   align-items: center;
@@ -252,16 +260,6 @@
   text-align: center;
 }
 
-.watchlist-group-divider {
-  padding: 6px 24px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--muted);
-  background: var(--surface2);
-  border-bottom: 1px solid var(--border);
-}
 
 .watchlist-asset {
   display: flex;
@@ -1381,30 +1379,6 @@
 .stress-ret    { font-size: 13px; font-weight: 700; }
 .stress-price  { font-size: 12px; }
 .stress-time   { font-size: 11px; }
-
-
-/* ── Market Movers (top volume / gainers / losers) ────────────────────────── */
-.mover-list {
-  display: flex;
-  flex-direction: column;
-}
-.mover-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--border);
-  font-size: 13px;
-}
-.mover-row:last-child { border-bottom: none; }
-.mover-symbol {
-  flex: 1;
-  font-weight: 600;
-  color: var(--text);
-}
-.mover-price   { font-size: 12px; }
-.mover-volume  { font-size: 12px; }
-.mover-change  { font-weight: 700; }
 
 
 /* ── Network Console Panel ────────────────────────────────────────────────── */
