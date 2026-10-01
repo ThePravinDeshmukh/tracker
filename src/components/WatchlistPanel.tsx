@@ -6,8 +6,6 @@ import { TOP_VOLUME_COUNT } from '../hooks/useTopVolumeCoins';
 import { filterByDeltaAvailability, sortWatchlistSymbols } from '../utils/watchlist';
 import WatchlistRows from './WatchlistRows';
 
-type WatchlistView = 'watching' | 'movers';
-
 interface Props {
   watchlist: string[];
   topVolumeCoins: string[];
@@ -40,6 +38,10 @@ function SortSelect({ value, onChange }: { value: WatchlistSortKey; onChange: (s
   );
 }
 
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <div className="watchlist-section-title">{children}</div>;
+}
+
 // Popular coins shown before API pairs load
 const POPULAR_COINS = [
   'BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','ADAUSDT','AVAXUSDT','DOTUSDT','MATICUSDT','LINKUSDT',
@@ -52,7 +54,6 @@ export default function WatchlistPanel({ watchlist, topVolumeCoins, deltaTradabl
   const [search, setSearch] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [sortBy, setSortBy] = useState<WatchlistSortKey>('volume');
-  const [view, setView] = useState<WatchlistView>('watching');
   const inputRef = useRef<HTMLInputElement>(null);
   const { allSymbols, loading } = useAvailablePairs();
 
@@ -88,45 +89,8 @@ export default function WatchlistPanel({ watchlist, topVolumeCoins, deltaTradabl
   return (
     <div className="watchlist-panel">
 
-      {/* View toggle: personal watchlist vs. market-wide movers */}
-      <div className="watchlist-view-toggle">
-        <button
-          className={`watchlist-view-btn${view === 'watching' ? ' active' : ''}`}
-          onClick={() => setView('watching')}
-        >
-          Watching
-        </button>
-        <button
-          className={`watchlist-view-btn${view === 'movers' ? ' active' : ''}`}
-          onClick={() => setView('movers')}
-        >
-          Movers
-        </button>
-      </div>
-
-      {view === 'movers' && (
-        <>
-          <div className="watchlist-add-row">
-            <span className="watchlist-view-title">Top {TOP_VOLUME_COUNT} by 24h Volume</span>
-            <SortSelect value={sortBy} onChange={setSortBy} />
-          </div>
-          {sortedTopVolume.length === 0
-            ? <div className="watcher-empty">Loading top coins by volume…</div>
-            : <WatchlistRows symbols={sortedTopVolume} {...rowProps} />}
-        </>
-      )}
-
-      {view === 'watching' && sortedWatchlist.length === 0 && !showInput && (
-        <div className="empty-state">
-          <div className="empty-icon">◉</div>
-          <p>No watchlist coins yet</p>
-          <p className="empty-sub">Add coins to monitor their live prices and momentum</p>
-          <button className="btn primary" onClick={() => setShowInput(true)}>+ Add Coin</button>
-        </div>
-      )}
-
       {/* Add coin search bar */}
-      {view === 'watching' && (showInput ? (
+      {showInput ? (
         <>
           <div className="watchlist-add-bar">
             <input
@@ -167,12 +131,17 @@ export default function WatchlistPanel({ watchlist, topVolumeCoins, deltaTradabl
           <SortSelect value={sortBy} onChange={setSortBy} />
           <button className="btn primary" onClick={() => setShowInput(true)}>+ Add Coin</button>
         </div>
-      ))}
-
-      {/* Coin list */}
-      {view === 'watching' && sortedWatchlist.length > 0 && !showInput && (
-        <WatchlistRows symbols={sortedWatchlist} {...rowProps} />
       )}
+
+      <SectionTitle>Watching</SectionTitle>
+      {sortedWatchlist.length === 0
+        ? <div className="watcher-empty watchlist-section-empty">No watchlist coins yet — add coins to monitor their live prices and momentum</div>
+        : <WatchlistRows symbols={sortedWatchlist} {...rowProps} />}
+
+      <SectionTitle>Top {TOP_VOLUME_COUNT} by 24h Volume</SectionTitle>
+      {sortedTopVolume.length === 0
+        ? <div className="watcher-empty watchlist-section-empty">Loading top coins by volume…</div>
+        : <WatchlistRows symbols={sortedTopVolume} {...rowProps} />}
     </div>
   );
 }
