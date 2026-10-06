@@ -139,22 +139,6 @@ export default function App() {
 
   return (
     <div className="app">
-      {/* Header */}
-      <header className="header">
-        <div className="header-inner">
-          <div className="logo">
-            <span className="logo-icon">◈</span>
-            <span>Portfolio</span>
-          </div>
-          <div className="header-right">
-            <div className="live-badge">
-              <span className="pulse-dot" />
-              LIVE
-            </div>
-          </div>
-        </div>
-      </header>
-
       <main className="main">
         {/* Summary Cards */}
         <div className="summary-grid">
