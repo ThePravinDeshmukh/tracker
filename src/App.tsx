@@ -82,8 +82,8 @@ export default function App() {
     [holdings, priceWatchSymbols]
   );
 
-  const { prices, prevPrices, volumes, change24h, high24h, low24h, trades24h } = useCryptoPrices(allSymbols);
-  const { momentumRows, stressEvents } = useMomentum(allSymbols, prices, volumes);
+  const { prices, prevPrices, volumes, change24h } = useCryptoPrices(allSymbols);
+  const { stressEvents } = useMomentum(allSymbols, prices, volumes);
   const volumeMomentum = useVolumeMomentum(allSymbols);
 
   const enriched = useMemo(
@@ -210,10 +210,6 @@ export default function App() {
               prices={prices}
               change24h={change24h}
               volumes={volumes}
-              high24h={high24h}
-              low24h={low24h}
-              trades24h={trades24h}
-              momentumRows={momentumRows}
               volumeMomentum={volumeMomentum}
               onAdd={addToWatchlist}
               onRemove={removeFromWatchlist}
