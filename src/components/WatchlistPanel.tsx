@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PriceMap, WatchlistSortKey, MomentumRow, VolumeMomentumMap } from '../types';
+import { PriceMap, WatchlistSortKey, VolumeMomentumMap } from '../types';
 import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
 import { useAvailablePairs } from '../hooks/useAvailablePairs';
 import { TOP_VOLUME_COUNT } from '../hooks/useTopVolumeCoins';
@@ -13,10 +13,6 @@ interface Props {
   prices: PriceMap;
   change24h: PriceMap;
   volumes: PriceMap;
-  high24h: PriceMap;
-  low24h: PriceMap;
-  trades24h: Record<string, number>;
-  momentumRows: MomentumRow[];
   volumeMomentum: VolumeMomentumMap;
   onAdd: (symbol: string) => void;
   onRemove: (symbol: string) => void;
@@ -50,7 +46,7 @@ const POPULAR_COINS = [
   'HUSDT',
 ];
 
-export default function WatchlistPanel({ watchlist, topVolumeCoins, deltaTradableAssets, prices, change24h, volumes, high24h, low24h, trades24h, momentumRows, volumeMomentum, onAdd, onRemove, onViewChart }: Props) {
+export default function WatchlistPanel({ watchlist, topVolumeCoins, deltaTradableAssets, prices, change24h, volumes, volumeMomentum, onAdd, onRemove, onViewChart }: Props) {
   const [search, setSearch] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [sortBy, setSortBy] = useState<WatchlistSortKey>('volume');
@@ -60,7 +56,7 @@ export default function WatchlistPanel({ watchlist, topVolumeCoins, deltaTradabl
   const marketData = { prices, change24h, volumes };
   const sortedWatchlist = sortWatchlistSymbols(watchlist, sortBy, marketData);
   const sortedTopVolume = sortWatchlistSymbols(topVolumeCoins, sortBy, marketData);
-  const rowProps = { userAddedSymbols: watchlist, prices, change24h, volumes, high24h, low24h, trades24h, momentumRows, volumeMomentum, onAdd, onRemove, onViewChart };
+  const rowProps = { userAddedSymbols: watchlist, prices, change24h, volumes, volumeMomentum, onAdd, onRemove, onViewChart };
 
   // Use API symbols when loaded, fall back to popular coins
   const symbolPool = allSymbols.length > 0 ? allSymbols : POPULAR_COINS;

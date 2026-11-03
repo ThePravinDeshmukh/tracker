@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
-import { PriceMap, MomentumRow, VolumeMomentumMap } from '../types';
+import React from 'react';
+import { PriceMap, VolumeMomentumMap } from '../types';
 import { getCoinIcon, getCoinColor } from '../hooks/useCryptoPrices';
 import { TOP_VOLUME_COUNT } from '../hooks/useTopVolumeCoins';
 import { MOMENTUM_WINDOW_HOURS } from '../utils/volumeMomentum';
-import CryptoDetailPanel from './CryptoDetailPanel';
 
 interface Props {
   symbols: string[];
@@ -11,10 +10,6 @@ interface Props {
   prices: PriceMap;
   change24h: PriceMap;
   volumes: PriceMap;
-  high24h: PriceMap;
-  low24h: PriceMap;
-  trades24h: Record<string, number>;
-  momentumRows: MomentumRow[];
   volumeMomentum: VolumeMomentumMap;
   onAdd: (symbol: string) => void;
   onRemove: (symbol: string) => void;
@@ -36,9 +31,7 @@ function fmtPrice(price: number | undefined): string {
   return price.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 6 });
 }
 
-export default function WatchlistRows({ symbols, userAddedSymbols, prices, change24h, volumes, high24h, low24h, trades24h, momentumRows, volumeMomentum, onAdd, onRemove, onViewChart }: Props) {
-  const [expandedSymbol, setExpandedSymbol] = useState<string | null>(null);
-
+export default function WatchlistRows({ symbols, userAddedSymbols, prices, change24h, volumes, volumeMomentum, onAdd, onRemove, onViewChart }: Props) {
   return (
     <>
       <div className="watchlist-header">
@@ -55,26 +48,14 @@ export default function WatchlistRows({ symbols, userAddedSymbols, prices, chang
         const changePct = change24h[symbol];
         const hasChange = changePct !== undefined && !isNaN(changePct);
         const priceDir  = hasChange ? (changePct > 0 ? 'pos' : changePct < 0 ? 'neg' : '') : '';
-        const isExpanded = expandedSymbol === symbol;
-        const momentumRow = momentumRows.find(r => r.symbol === symbol);
         const isUserAdded = userAddedSymbols.includes(symbol);
 
-        const handleRowClick = (): void => {
-          setExpandedSymbol(isExpanded ? null : symbol);
-        };
-
         return (
-          <div key={symbol} className={`watchlist-row-wrap${isExpanded ? ' expanded' : ''}`}>
-            <div
-              className={`watchlist-row${isExpanded ? ' watchlist-row-expanded' : ''}`}
-              onClick={handleRowClick}
-              role="button"
-              tabIndex={0}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleRowClick(); }}
-            >
+          <div key={symbol} className="watchlist-row-wrap">
+            <div className="watchlist-row">
               <button
                 className="watchlist-asset watchlist-asset-btn"
-                onClick={e => { e.stopPropagation(); onViewChart(symbol); }}
+                onClick={() => onViewChart(symbol)}
                 title={`View ${symbol} chart`}
               >
                 <span className="watchlist-coin-icon" style={{ background: color }}>{icon}</span>
@@ -103,18 +84,17 @@ export default function WatchlistRows({ symbols, userAddedSymbols, prices, chang
                 {!isUserAdded && (
                   <button
                     className="btn-icon add"
-                    onClick={e => { e.stopPropagation(); onAdd(symbol); }}
+                    onClick={() => onAdd(symbol)}
                     title={`Add ${symbol} to watchlist`}
                   >
                     +
                   </button>
                 )}
               </span>
-              <span className={`watchlist-chevron${isExpanded ? ' open' : ''}`}>▶</span>
               {isUserAdded ? (
                 <button
                   className="btn-icon del"
-                  onClick={e => { e.stopPropagation(); onRemove(symbol); }}
+                  onClick={() => onRemove(symbol)}
                   title={`Remove ${symbol}`}
                 >
                   ×
@@ -125,15 +105,6 @@ export default function WatchlistRows({ symbols, userAddedSymbols, prices, chang
                 </span>
               )}
             </div>
-            {isExpanded && (
-              <CryptoDetailPanel
-                price={price}
-                high24h={high24h[symbol]}
-                low24h={low24h[symbol]}
-                trades24h={trades24h[symbol]}
-                momentumRow={momentumRow}
-              />
-            )}
           </div>
         );
       })}
